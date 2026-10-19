@@ -4,24 +4,20 @@ import { Flash } from "@/components/Flash";
 import { activeApiPlan, activePlan, apiPlanFeatures, apiPlanPrice, formatPlanPrice, type ApiPaidPlan } from "@/lib/billing/plans";
 import { cancelApiSubscription, startApiSubscription } from "./actions";
 import { availableBillingIntervals, billingLocation } from "@/lib/billing/location";
-
 export const metadata = { title: "API plans & billing | Monifyd" };
-
 const PLANS = [
   { id: "FREE", name: "Free", intervals: null },
   { id: "GROWTH", name: "Growth" },
   { id: "SCALE", name: "Scale" },
 ] as const;
-
 export default async function ApiBillingPage({ searchParams }: { searchParams: Promise<{ error?: string; message?: string; reference?: string }> }) {
   const [sp, session, location] = await Promise.all([searchParams, requireOwner(), billingLocation()]);
   const { user, supabase } = session;
   const { currency } = location;
-  const bachsNgnUnavailable = currency === "NGN" && process.env.BACHS_NGN_SUBSCRIPTIONS_ENABLED !== "true";
   const [{ data: subscription, error }, attemptResult, { data: dashboardSubscription, error: dashboardError }] = await Promise.all([
-    supabase.from("api_subscriptions").select("plan,status,billing_interval,current_period_end,cancel_at_period_end,bachs_subscription_id").eq("merchant_id", user.id).maybeSingle(),
+    supabase.from("api_subscriptions").select("plan,status,billing_interval,current_period_end,cancel_at_period_end,bachs_subscription_id,paystack_subscription_code,billing_provider").eq("merchant_id", user.id).maybeSingle(),
     sp.reference
-      ? supabase.from("api_billing_checkout_attempts").select("status").eq("merchant_id", user.id).eq("reference", sp.reference).maybeSingle()
+      ? supabase.from("api_billing_checkout_attempts").select("status,billing_provider").eq("merchant_id", user.id).eq("reference", sp.reference).maybeSingle()
       : Promise.resolve({ data: null, error: null }),
     supabase.from("merchant_subscriptions").select("plan,status,current_period_end,legacy_api_access").eq("merchant_id", user.id).maybeSingle(),
   ]);
@@ -40,15 +36,15 @@ export default async function ApiBillingPage({ searchParams }: { searchParams: P
     <>
       <div className="head"><h1>API plans &amp; billing</h1><div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><Link className="btn btn-sm" href="/dashboard/developers">API keys</Link><Link className="btn btn-sm" href="/dashboard/billing">Dashboard plans</Link></div></div>
       <Flash error={sp.error} message={sp.message} />
-      {bachsNgnUnavailable && <section className="card"><p className="hint">BACHS NGN subscriptions have not been enabled for this account. Contact BACHS to confirm access before offering Nigerian billing.</p></section>}
-      {attemptResult.data?.status === "PENDING" && <section className="card"><p>BACHS is confirming your API subscription. Refresh in a moment to see the updated plan.</p></section>}
+      <p className="hint" style={{ marginBottom: 12 }}>{currency === "NGN" ? "Nigerian naira subscriptions are processed securely by Paystack." : "USD subscriptions are processed securely by BACHS."}</p>
+      {attemptResult.data?.status === "PENDING" && <section className="card"><p>{attemptResult.data.billing_provider} is confirming your API subscription. Refresh in a moment to see the updated plan.</p></section>}
       <section className="card"><h2>Current API plan</h2>
         {apiPlanActive ? <>
           <p style={{ color: "var(--muted)" }}>{currentPlan} API plan{subscription?.billing_interval ? `, billed ${subscription.billing_interval}` : ""}{subscription?.current_period_end ? ` until ${new Date(subscription.current_period_end).toLocaleDateString("en-GB", { dateStyle: "medium" })}` : ""}.</p>
           {subscription?.cancel_at_period_end && <p className="hint" style={{ marginTop: 8 }}>API auto-renewal is stopped; your current plan remains active through the period shown above.</p>}
-          {subscription?.status === "PAST_DUE" && <p className="hint" style={{ marginTop: 8 }}>The latest API subscription payment failed. BACHS may retry; paid API access continues until the current period ends.</p>}
-          {!subscription?.cancel_at_period_end && subscription?.bachs_subscription_id && <form action={cancelApiSubscription} style={{ marginTop: 16 }}><button className="btn btn-danger">Stop API auto-renewal</button></form>}
-          {!subscription?.cancel_at_period_end && !subscription?.bachs_subscription_id && <p className="hint" style={{ marginTop: 8 }}>This subscription predates BACHS billing and cannot be managed here. Contact support to migrate it.</p>}
+          {subscription?.status === "PAST_DUE" && <p className="hint" style={{ marginTop: 8 }}>The latest API subscription payment failed. Your provider may retry; paid API access continues until the current period ends.</p>}
+          {!subscription?.cancel_at_period_end && (subscription?.bachs_subscription_id || subscription?.paystack_subscription_code) && <form action={cancelApiSubscription} style={{ marginTop: 16 }}><button className="btn btn-danger">Stop API auto-renewal</button></form>}
+          {!subscription?.cancel_at_period_end && !subscription?.bachs_subscription_id && !subscription?.paystack_subscription_code && <p className="hint" style={{ marginTop: 8 }}>This subscription predates online billing management. Contact support to migrate it.</p>}
         </> : legacyApiPlan !== "FREE" ? <>
           <p style={{ color: "var(--muted)" }}>You have legacy API access through your existing {dashboardLegacyPlan} Dashboard plan. Choose a separate API plan below to manage API usage independently.</p>
           <p className="hint" style={{ marginTop: 8 }}>Your Dashboard subscription and its renewal are managed separately on <Link href="/dashboard/billing">Dashboard plans</Link>.</p>
@@ -70,8 +66,8 @@ export default async function ApiBillingPage({ searchParams }: { searchParams: P
                     const amount = apiPlanPrice(plan.id as ApiPaidPlan, currency, interval);
                     return <form action={startApiSubscription} key={interval}>
                       <input type="hidden" name="plan" value={plan.id} /><input type="hidden" name="interval" value={interval} />
-                      <button className={`btn ${selected ? "" : "btn-primary"}`} style={{ width: "100%" }} disabled={paidActive || bachsNgnUnavailable}>
-                        {formatPlanPrice(amount, currency)} / {interval === "monthly" ? "month" : "year"}
+                      <button className={`btn ${selected ? "" : "btn-primary"}`} style={{ width: "100%" }} disabled={paidActive}>
+                        {formatPlanPrice(amount, currency)} / {interval === "monthly" ? "month" : "year"} · {currency === "NGN" ? "Paystack" : "BACHS"}
                       </button>
                     </form>;
                   })}

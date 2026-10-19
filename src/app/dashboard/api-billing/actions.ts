@@ -9,6 +9,7 @@ import { apiPlanPrice, type ApiPaidPlan, type BillingInterval } from "@/lib/bill
 import { done, fail } from "@/lib/flash";
 import { availableBillingIntervals, billingLocation } from "@/lib/billing/location";
 import { bachsDelete, bachsPost, bachsProductEnvName } from "@/lib/billing/bachs";
+import { paystackPlanEnvName, paystackPost } from "@/lib/billing/paystack";
 
 const PATH = "/dashboard/api-billing";
 
@@ -19,9 +20,6 @@ export async function startApiSubscription(fd: FormData) {
   if (plan !== "GROWTH" && plan !== "SCALE") fail(PATH, "Choose a valid API plan.");
   if (interval !== "monthly" && interval !== "annually") fail(PATH, "Choose a valid billing period.");
   const { country, currency } = await billingLocation();
-  if (currency === "NGN" && process.env.BACHS_NGN_SUBSCRIPTIONS_ENABLED !== "true") {
-    fail(PATH, "BACHS NGN subscriptions are not enabled for this account yet. Contact BACHS before offering NGN billing.");
-  }
   if (!availableBillingIntervals(currency).some((available) => available === interval)) {
     fail(PATH, "Choose a valid billing period.");
   }
@@ -37,9 +35,10 @@ export async function startApiSubscription(fd: FormData) {
 
   const selectedPlan = plan as ApiPaidPlan;
   const selectedInterval = interval as BillingInterval;
-  const productName = bachsProductEnvName("API", selectedPlan, currency, selectedInterval);
-  const bachsProductId = process.env[productName];
-  if (!bachsProductId) fail(PATH, `API billing is not configured yet: add ${productName} from your BACHS catalog.`);
+  const provider = currency === "NGN" ? "PAYSTACK" : "BACHS";
+  const productName = currency === "NGN" ? paystackPlanEnvName("API", selectedPlan, selectedInterval) : bachsProductEnvName("API", selectedPlan, currency, selectedInterval);
+  const productId = process.env[productName];
+  if (!productId) fail(PATH, `API billing is not configured yet: add ${productName} to your environment.`);
   const reference = `api_${randomUUID().replace(/-/g, "")}`;
   const amount = apiPlanPrice(selectedPlan, currency, selectedInterval);
   const staleBefore = new Date(Date.now() - 30 * 60_000).toISOString();
@@ -49,7 +48,8 @@ export async function startApiSubscription(fd: FormData) {
   if (expireError) throw new Error(`Could not expire an abandoned API checkout: ${expireError.message}`);
   const { error: insertError } = await db.from("api_billing_checkout_attempts").insert({
     reference, merchant_id: user.id, plan: selectedPlan, billing_interval: selectedInterval,
-    billing_country: country, billing_currency: currency, billing_provider: "BACHS",
+    billing_country: country, billing_currency: currency, billing_provider: provider,
+    ...(provider === "PAYSTACK" ? { paystack_plan_code: productId } : {}),
     amount_minor: amount, customer_email: authUser.email,
   });
   if (insertError) {
@@ -59,8 +59,18 @@ export async function startApiSubscription(fd: FormData) {
 
   let checkoutUrl: string;
   try {
+    if (provider === "PAYSTACK") {
+      const checkout = await paystackPost<{ authorization_url: string; access_code: string }>("/transaction/initialize", {
+        email: authUser.email, amount, currency, plan: productId, reference,
+        callback_url: `${appUrl()}${PATH}?reference=${encodeURIComponent(reference)}`,
+        metadata: { reference, merchant_id: user.id, product: "api", plan: selectedPlan, interval: selectedInterval, country, currency },
+      });
+      checkoutUrl = checkout.authorization_url;
+      const { error } = await db.from("api_billing_checkout_attempts").update({ provider_checkout_id: checkout.access_code }).eq("reference", reference);
+      if (error) throw new Error(`Paystack checkout started, but Monifyd could not record its checkout ID: ${error.message}`);
+    } else {
     const checkout = await bachsPost<{ checkout_id: string; checkout_url: string }>("/checkout-sessions", {
-      product_cart: [{ product_id: bachsProductId, quantity: 1 }], customer: { email: authUser.email },
+      product_cart: [{ product_id: productId, quantity: 1 }], customer: { email: authUser.email },
       billing_currency: currency,
       success_url: `${appUrl()}${PATH}?reference=${encodeURIComponent(reference)}`,
       cancel_url: `${appUrl()}${PATH}?error=${encodeURIComponent("Checkout was cancelled.")}`,
@@ -69,6 +79,7 @@ export async function startApiSubscription(fd: FormData) {
     checkoutUrl = checkout.checkout_url;
     const { error } = await db.from("api_billing_checkout_attempts").update({ provider_checkout_id: checkout.checkout_id }).eq("reference", reference);
     if (error) throw new Error(`BACHS checkout started, but Monifyd could not record its checkout ID: ${error.message}`);
+    }
   } catch (error) {
     const { error: updateError } = await db.from("api_billing_checkout_attempts")
       .update({ status: "FAILED", completed_at: new Date().toISOString() }).eq("reference", reference).eq("status", "PENDING");
@@ -82,8 +93,18 @@ export async function cancelApiSubscription() {
   const { user } = await requireOwner();
   const db = adminClient();
   const { data: subscription, error: subscriptionError } = await db.from("api_subscriptions")
-    .select("bachs_subscription_id,cancel_at_period_end").eq("merchant_id", user.id).maybeSingle();
+    .select("billing_provider,bachs_subscription_id,paystack_subscription_code,cancel_at_period_end").eq("merchant_id", user.id).maybeSingle();
   if (subscriptionError) throw new Error("Could not load your API subscription details.");
+  if (subscription?.billing_provider === "PAYSTACK" && subscription.paystack_subscription_code) {
+    const { data: token, error: tokenError } = await db.from("paystack_subscription_tokens").select("email_token").eq("merchant_id", user.id).eq("product", "api").maybeSingle();
+    if (tokenError || !token?.email_token) fail(PATH, "Paystack cancellation details are unavailable. Contact support.");
+    try { await paystackPost("/subscription/disable", { code: subscription.paystack_subscription_code, token: token.email_token }); }
+    catch (error) { fail(PATH, error instanceof Error ? error.message : "Could not cancel your API subscription."); }
+    const { error } = await db.from("api_subscriptions").update({ cancel_at_period_end: true, updated_at: new Date().toISOString() }).eq("merchant_id", user.id);
+    if (error) throw new Error(`Paystack stopped API renewal, but Monifyd could not update the subscription: ${error.message}`);
+    revalidatePath(PATH);
+    done(PATH, "API auto-renewal has been stopped. Your API plan stays active until the current period ends.");
+  }
   if (subscription?.bachs_subscription_id) {
     if (subscription.cancel_at_period_end) fail(PATH, "Your API subscription is already set to stop renewing.");
     try { await bachsDelete(`/subscriptions/${encodeURIComponent(subscription.bachs_subscription_id)}`, { cancel_at_period_end: true, reason: "Customer requested" }); }

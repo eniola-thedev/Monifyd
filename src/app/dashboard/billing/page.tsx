@@ -17,24 +17,23 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
   const [sp, session, location] = await Promise.all([searchParams, requireOwner(), billingLocation()]);
   const { user, supabase } = session;
   const [{ data: subscription, error }, attemptResult] = await Promise.all([
-    supabase.from("merchant_subscriptions").select("plan,status,billing_interval,billing_country,billing_currency,current_period_end,cancel_at_period_end,bachs_subscription_id")
+    supabase.from("merchant_subscriptions").select("plan,status,billing_interval,billing_country,billing_currency,current_period_end,cancel_at_period_end,bachs_subscription_id,paystack_subscription_code,billing_provider")
       .eq("merchant_id", user.id).maybeSingle(),
     sp.reference
-      ? supabase.from("billing_checkout_attempts").select("status").eq("merchant_id", user.id).eq("reference", sp.reference).maybeSingle()
+      ? supabase.from("billing_checkout_attempts").select("status,billing_provider").eq("merchant_id", user.id).eq("reference", sp.reference).maybeSingle()
       : Promise.resolve({ data: null, error: null }),
   ]);
   if (error || attemptResult.error) throw new Error(`Could not load billing details: ${error?.message ?? attemptResult.error?.message}`);
   const { currency } = location;
   const currentPlan = activePlan(subscription);
   const paidActive = currentPlan !== "FREE";
-  const bachsNgnUnavailable = currency === "NGN" && process.env.BACHS_NGN_SUBSCRIPTIONS_ENABLED !== "true";
   return (
     <>
       <div className="head"><h1>Upgrade</h1><a className="btn btn-sm" href="/dashboard/api-billing">API plans</a></div>
       <Flash error={sp.error} message={sp.message} />
-      {bachsNgnUnavailable && <section className="card"><p className="hint">BACHS NGN subscriptions have not been enabled for this account. Contact BACHS to confirm access before offering Nigerian billing.</p></section>}
+      <p className="hint" style={{ marginBottom: 12 }}>{currency === "NGN" ? "Nigerian naira subscriptions are processed securely by Paystack." : "USD subscriptions are processed securely by BACHS."}</p>
       {attemptResult.data?.status === "PENDING" && <section className="card">
-        <p>BACHS is confirming your subscription. This page will show your plan once confirmation arrives; refresh in a moment.</p>
+        <p>{attemptResult.data.billing_provider} is confirming your subscription. This page will show your plan once confirmation arrives; refresh in a moment.</p>
       </section>}
       <section className="card"><div className="head"><h2>Current plan</h2><StatusBadge status={subscription?.status === "PAST_DUE" ? "FAILED" : currentPlan} /></div>
         <p style={{ color: "var(--muted)" }}>
@@ -43,13 +42,13 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
             : "You are on Free. Current payment links, invoices, payment tracking, basic reports and CSV exports remain available."}
         </p>
         {subscription?.current_period_end && <p style={{ marginTop: 8 }}>{subscription.cancel_at_period_end ? "Access ends" : "Next renewal"}: {new Date(subscription.current_period_end).toLocaleDateString("en-GB", { dateStyle: "medium" })}</p>}
-        {paidActive && !subscription?.cancel_at_period_end && subscription?.bachs_subscription_id && <form action={cancelSubscription} style={{ marginTop: 16 }}>
+        {paidActive && !subscription?.cancel_at_period_end && (subscription?.bachs_subscription_id || subscription?.paystack_subscription_code) && <form action={cancelSubscription} style={{ marginTop: 16 }}>
           <button className="btn btn-danger">Stop auto-renewal</button>
         </form>}
-        {paidActive && !subscription?.cancel_at_period_end && !subscription?.bachs_subscription_id
-          && <p className="hint" style={{ marginTop: 8 }}>This subscription predates BACHS billing and cannot be managed here. Contact support to migrate it.</p>}
+        {paidActive && !subscription?.cancel_at_period_end && !subscription?.bachs_subscription_id && !subscription?.paystack_subscription_code
+          && <p className="hint" style={{ marginTop: 8 }}>This subscription predates online billing management. Contact support to migrate it.</p>}
         {subscription?.cancel_at_period_end && <p className="hint" style={{ marginTop: 8 }}>Auto-renewal is stopped; paid access remains until the current period ends.</p>}
-        {subscription?.status === "PAST_DUE" && <p className="hint" style={{ marginTop: 8 }}>The latest subscription payment failed. BACHS may retry; paid benefits continue until the current period ends.</p>}
+        {subscription?.status === "PAST_DUE" && <p className="hint" style={{ marginTop: 8 }}>The latest subscription payment failed. Your provider may retry; paid benefits continue until the current period ends.</p>}
       </section>
       <div className="row2">
         {PLANS.map((plan) => {
@@ -69,8 +68,8 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
                       <form action={startSubscription} key={interval}>
                         <input type="hidden" name="plan" value={plan.id} />
                         <input type="hidden" name="interval" value={interval} />
-                        <button className={`btn ${selected ? "" : "btn-primary"}`} style={{ width: "100%" }} disabled={paidActive || bachsNgnUnavailable}>
-                          {formatPlanPrice(amount, currency)} / {interval === "monthly" ? "month" : "year"}
+                        <button className={`btn ${selected ? "" : "btn-primary"}`} style={{ width: "100%" }} disabled={paidActive}>
+                          {formatPlanPrice(amount, currency)} / {interval === "monthly" ? "month" : "year"} Â· {currency === "NGN" ? "Paystack" : "BACHS"}
                         </button>
                       </form>
                     );
