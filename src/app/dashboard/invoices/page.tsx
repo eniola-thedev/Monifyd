@@ -47,24 +47,35 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
   };
   const have = new Set((wallets ?? []).map((w: any) => w.network as string));
   return (
-    <>
-      <div className="head"><h1>Invoices</h1><a className="btn btn-sm" href="/dashboard/exports/invoices">Export CSV</a></div>
+    <div className="invoices-page">
+      <header className="invoices-heading">
+        <div><h1>Invoices</h1><p>Send payment requests and keep track of what customers owe.</p></div>
+        <a className="btn" href="/dashboard/exports/invoices">Export CSV</a>
+      </header>
       <Flash error={sp.error} message={sp.message} />
-      <section className="card"><h2>Create an invoice</h2>
+      <details className="card invoice-create" open={(count ?? 0) === 0 && workspaceRole !== "VIEWER"}>
+        <summary>
+          <span><strong>Create an invoice</strong><span className="hint">Add a customer, line items and payment details.</span></span>
+          <span className="btn btn-primary invoice-create-action">New invoice</span>
+        </summary>
+        <div className="invoice-create-content">
         {workspaceRole === "VIEWER" ? <p className="hint">Your workspace role is read-only.</p> : <>
         <InvoiceComposer action={createInvoice} plan={plan} businessName={profile?.business_name ?? ""} initialDesign={initialDesign} presets={Array.isArray(profile?.invoice_design_presets) ? profile.invoice_design_presets : []} issuedDate={new Date().toLocaleDateString("en-GB")} paymentOptions={<CoinPicker pairs={pairs ?? []} networks={networks ?? []} haveNetworks={have} />} />
         </>}
-      </section>
-      <section className="card"><div className="head"><h2>Your invoices</h2>
-        <form method="get"><label htmlFor="invoice-search" className="sr-only">Search invoices</label><input id="invoice-search" name="q" type="text" defaultValue={search} placeholder="Search invoice, email or title" style={{ width: 240, display: "inline-block" }} />{" "}
-          <label htmlFor="invoice-status" className="sr-only">Filter invoices by status</label><select id="invoice-status" name="status" defaultValue={sp.status ?? ""} style={{ width: "auto", display: "inline-block" }}><option value="">All statuses</option>{statuses.map((status) => <option key={status} value={status}>{status.replace(/_/g, " ").toLowerCase()}</option>)}</select>{" "}
-          <button className="btn btn-sm">Filter</button></form>
+        </div>
+      </details>
+      <section className="card invoice-list" aria-labelledby="invoice-list-title"><div className="invoice-list-heading"><div><h2 id="invoice-list-title">Your invoices</h2><p className="hint">{count ?? 0} total</p></div>
+        <form method="get" className="invoice-filters">
+          <div className="field"><label htmlFor="invoice-search">Search</label><input id="invoice-search" name="q" type="search" defaultValue={search} placeholder="Number, customer or title" /></div>
+          <div className="field"><label htmlFor="invoice-status">Status</label><select id="invoice-status" name="status" defaultValue={sp.status ?? ""}><option value="">All statuses</option>{statuses.map((status) => <option key={status} value={status}>{status.replace(/_/g, " ").toLowerCase()}</option>)}</select></div>
+          <button className="btn btn-sm">Apply filters</button>
+        </form>
       </div>
-        {(invoices ?? []).length === 0 ? <div className="empty"><strong>No invoices yet</strong>Create one above and Monifyd will email it with a Pay invoice button.</div> : (
-          <div className="tablewrap"><table><thead><tr><th>Number</th><th>Customer</th><th>Title</th><th>Amount</th><th>Status</th><th>Due</th><th><span className="sr-only">Actions</span></th></tr></thead><tbody>
+        {(invoices ?? []).length === 0 ? <div className="empty"><strong>{search || sp.status ? "No invoices found" : "No invoices yet"}</strong>{search || sp.status ? "Try changing your search or status filter." : workspaceRole === "VIEWER" ? "Ask a workspace owner or admin to create the first invoice." : "Create an invoice and Monifyd can email it with a payment link."}</div> : (
+          <div className="tablewrap invoice-table-wrap"><table className="invoice-table"><thead><tr><th>Number</th><th>Customer</th><th>Title</th><th>Amount</th><th>Status</th><th>Due</th><th><span className="sr-only">Actions</span></th></tr></thead><tbody>
             {(invoices ?? []).map((i: any) => (
-              <tr key={i.id}><td className="num">{i.invoice_number}</td><td>{i.customer_email}</td><td>{i.title}</td><td className="num">{money(i.amount_cents, i.currency)}</td><td><StatusBadge status={i.status} /></td><td>{i.due_date ?? ""}</td>
-                <td style={{ display: "flex", gap: 8 }}>
+              <tr key={i.id}><td className="num" data-label="Number">{i.invoice_number}</td><td data-label="Customer">{i.customer_email}</td><td data-label="Title">{i.title}</td><td className="num" data-label="Amount">{money(i.amount_cents, i.currency)}</td><td data-label="Status"><StatusBadge status={i.status} /></td><td data-label="Due">{i.due_date ?? "—"}</td>
+                <td className="invoice-actions" data-label="Actions">
                   <a className="btn btn-sm" href={`/pay/${i.id}`} target="_blank" rel="noreferrer">View</a>
                   {workspaceRole !== "VIEWER" && ["DRAFT", "SENT", "AWAITING_PAYMENT"].includes(i.status) && <>
                     <form action={sendInvoice}><input type="hidden" name="id" value={i.id} /><button className="btn btn-sm">{i.status === "DRAFT" ? "Send" : "Resend"}</button></form>
@@ -81,6 +92,6 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
           </div>
         </div>}
       </section>
-    </>
+    </div>
   );
 }
