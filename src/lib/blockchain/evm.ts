@@ -18,11 +18,41 @@ export const evmAdapter: BlockchainAdapter = {
   async scan({ network, address, tokenContract, cursor }) {
     const cfg = RPC[network];
     if (!cfg) throw new Error(`No RPC configured for ${network}`);
-    if (!tokenContract) return { transfers: [], cursor }; // native coin detection is not supported yet
     const latest = hexToNum(await jsonRpc<string>(cfg.url, "eth_blockNumber", []));
     const from = Math.max(cursor ? Number(cursor) + 1 : 0, latest - cfg.lookback);
     if (from > latest) return { transfers: [], cursor: String(latest) };
     const to = Math.min(latest, from + MAX_RANGE - 1);
+    if (!tokenContract) {
+      const transfers: DetectedTransfer[] = [];
+      const blocks: { number: number; block: { timestamp: string; transactions: { hash: string; to: string | null; value: string }[] } | null }[] = [];
+      // Fetch full blocks in small batches because native transfers do not emit ERC-20 logs.
+      for (let start = from; start <= to; start += 20) {
+        const end = Math.min(to, start + 19);
+        const batch = await Promise.all(Array.from({ length: end - start + 1 }, async (_, i) => {
+          const number = start + i;
+          const block = await jsonRpc<{ timestamp: string; transactions: { hash: string; to: string | null; value: string }[] } | null>(
+            cfg.url, "eth_getBlockByNumber", ["0x" + number.toString(16), true],
+          );
+          return { number, block };
+        }));
+        blocks.push(...batch);
+      }
+      const recipient = address.toLowerCase();
+      for (const { number, block } of blocks) {
+        if (!block) continue;
+        const time = hexToNum(block.timestamp);
+        for (const tx of block.transactions) {
+          if (tx.to?.toLowerCase() !== recipient || BigInt(tx.value) <= 0n) continue;
+          transfers.push({
+            txHash: tx.hash,
+            amountBaseUnits: BigInt(tx.value),
+            confirmations: latest - number + 1,
+            time,
+          });
+        }
+      }
+      return { transfers, cursor: String(to) };
+    }
     const logs = await jsonRpc<{ transactionHash: string; blockNumber: string; data: string; removed?: boolean }[]>(cfg.url, "eth_getLogs", [{
       address: tokenContract, fromBlock: "0x" + from.toString(16), toBlock: "0x" + to.toString(16),
       topics: [TRANSFER_TOPIC, null, pad(address)],

@@ -5,7 +5,7 @@ Monifyd currently adds no transaction fee to customer payments. Customers pay th
 
 ## Set up
 
-1. Create a Supabase project and run migrations `0001_init.sql` through `0016_currency_payment_providers.sql` in order in the SQL editor. Before deploying this version or applying `0015_bachs_only.sql`, cancel any active subscriptions created with the previous provider in its dashboard.
+1. Create a Supabase project and run migrations `0001_init.sql` through `0017_enable_native_eth.sql` in order in the SQL editor. Before deploying this version or applying `0015_bachs_only.sql`, cancel any active subscriptions created with the previous provider in its dashboard.
 2. **Google sign-in:** in Google Cloud Console create an OAuth client (Web). Add the redirect URI shown in
    Supabase under Authentication > Providers > Google, then paste the client ID and secret there and enable it.
    In Supabase Authentication > URL Configuration, set the Site URL to your app URL and add
@@ -31,8 +31,7 @@ The detector watches the merchant's wallet, matches an incoming transfer to the 
 tracks confirmations, and marks the payment PAID at the network's required depth. Only exact matches are
 attributed automatically. A transfer with a different amount stays unmatched and the quote expires.
 
-Supported at launch: BTC on Bitcoin; USDC and USDT on Ethereum, Base, Polygon (USDC), BNB Chain (USDT) and Solana; SOL on Solana.
-Native ETH is switched off until detection for it is built. Public RPC endpoints are rate-limited: use dedicated ones for real traffic.
+Supported assets: BTC on Bitcoin; native ETH, USDC and USDT on Ethereum; USDC on Base and Polygon; USDT on BNB Chain; and SOL, USDC and USDT on Solana. Native ETH detection scans Ethereum blocks for direct transfers to checkout addresses. Public RPC endpoints are rate-limited: use dedicated ones for real traffic.
 
 ## Before you take real money
 
@@ -108,7 +107,7 @@ The standalone package in `sdk/` is ready to publish as `@monifyd/sdk`; see [sdk
 - Back up Supabase regularly and test restoring a backup into a separate project. Keep the service-role key and email/RPC credentials in the deployment provider's secret manager; rotate them after any suspected exposure.
 - Configure Resend and verify the sender domain before relying on invoice or reminder email. Reminder and webhook delivery is at-least-once; consumers should safely handle duplicate events.
 - Configure and verify BACHS production credentials and recurring products before turning on subscription checkout. Set `BACHS_ENVIRONMENT=sandbox` only when deliberately using a sandbox account.
-- Apply and test all migrations through `0016_currency_payment_providers.sql` in a non-production Supabase project before deploying. Test Dashboard/API checkout, renewal, cancellation, legacy API access, team invitations, role enforcement, expired Business access, concurrent invitation attempts, account deletion and cancellation at the seven-day boundary, webhook secret access, payment settlement failures, invoice design storage access, and invoice numbering.
+- Apply and test all migrations through `0017_enable_native_eth.sql` in a non-production Supabase project before deploying. Test Dashboard/API checkout, renewal, cancellation, native ETH detection, legacy API access, team invitations, role enforcement, expired Business access, concurrent invitation attempts, account deletion and cancellation at the seven-day boundary, webhook secret access, payment settlement failures, invoice design storage access, and invoice numbering.
 - Grant the admin role only to named trusted operator accounts. Periodically review access and the operational-event queue.
 
 ## Checks
