@@ -1,0 +1,8 @@
+node_modules
+.next
+.env*
+!.env.example
+.vercel
+*.pem
+.mcp.json
+tsconfig.tsbuildinfo

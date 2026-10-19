@@ -1,0 +1,39 @@
+{
+  "name": "monifyd",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test:fees": "tsx src/lib/fees/calculate.test.ts",
+    "test:amounts": "tsx src/lib/payments/amounts.test.ts",
+    "test:webhooks": "tsx src/lib/webhooks/webhooks.test.ts",
+    "test:reminders": "tsx src/lib/email/invoice-reminder.test.ts",
+    "test:rpc": "tsx src/lib/blockchain/rpc.test.ts",
+    "test:api": "tsx src/lib/api/errors.test.ts",
+    "test:refund-email": "tsx src/lib/email/refund-update.test.ts",
+    "test:refund-amount": "tsx src/lib/refunds/amount.test.ts",
+    "test:billing-plans": "tsx src/lib/billing/plans.test.ts",
+    "security:encrypt-webhook-secrets": "tsx scripts/encrypt-webhook-secrets.ts"
+  },
+  "dependencies": {
+    "@supabase/server": "^1.9.1",
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.45.0",
+    "next": "^15.0.0",
+    "qrcode": "^1.5.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
