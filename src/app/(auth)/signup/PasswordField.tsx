@@ -2,16 +2,20 @@
 
 import { useState } from "react";
 
-export function PasswordField() {
+export function PasswordField({
+  id = "password",
+  name = "password",
+  label = "Password",
+}: { id?: string; name?: string; label?: string }) {
   const [visible, setVisible] = useState(false);
 
   return (
     <div className="field">
-      <label htmlFor="password">Password</label>
+      <label htmlFor={id}>{label}</label>
       <div className="password-input">
         <input
-          id="password"
-          name="password"
+          id={id}
+          name={name}
           type={visible ? "text" : "password"}
           autoComplete="new-password"
           minLength={8}

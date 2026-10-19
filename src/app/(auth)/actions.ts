@@ -20,8 +20,10 @@ export async function signup(fd: FormData) {
   const next = safeInternalPath(String(fd.get("next") ?? ""));
   const email = String(fd.get("email") ?? "").trim();
   const password = String(fd.get("password") ?? "");
+  const confirmPassword = String(fd.get("confirmPassword") ?? "");
   const business = String(fd.get("business") ?? "").trim();
   if (password.length < 8) fail("/signup", "Choose a password with at least 8 characters.");
+  if (password !== confirmPassword) fail("/signup", "Passwords do not match.");
   const supabase = await serverClient();
   const { data, error } = await supabase.auth.signUp({
     email, password,
