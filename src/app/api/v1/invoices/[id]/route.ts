@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminClient } from "@/lib/supabase/admin";
 import { authenticate } from "@/lib/api/auth";
+import { appUrl } from "@/lib/format";
 import { apiAuthError, apiError } from "@/lib/api/errors";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -13,5 +14,5 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     .eq("id", id).eq("merchant_id", ctx.merchantId).eq("livemode", ctx.mode === "live").maybeSingle();
   if (error) return apiError("INTERNAL_ERROR", "Could not load the invoice.", 500);
   if (!data) return apiError("INVOICE_NOT_FOUND", "No invoice with that ID.", 404);
-  return NextResponse.json({ ...data, checkout_url: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/pay/${id}` });
+  return NextResponse.json({ ...data, checkout_url: `${appUrl()}/pay/${id}` });
 }

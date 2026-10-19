@@ -11,7 +11,7 @@ Monifyd currently adds no transaction fee to customer payments. Customers pay th
    In Supabase Authentication > URL Configuration, set the Site URL to your app URL and add
    `<your app URL>/auth/callback` to the redirect URLs.
    In Supabase Authentication > Providers > Email, enable email confirmations to require verification for new email/password accounts. Set up SMTP so confirmation messages are delivered reliably.
-3. `cp .env.example .env.local` and fill it in. Set `WEBHOOK_SIGNING_SECRET_PEPPER` to a randomly generated value of at least 32 bytes (for example, `openssl rand -base64 32`). Keep it in your deployment secret manager and do not rotate it without re-encrypting existing endpoint secrets. Set `NEXT_PUBLIC_APP_URL` to your real https URL in production.
+3. `cp .env.example .env.local` and fill it in. Set `WEBHOOK_SIGNING_SECRET_PEPPER` to a randomly generated value of at least 32 bytes (for example, `openssl rand -base64 32`). Keep it in your deployment secret manager and do not rotate it without re-encrypting existing endpoint secrets. Set server-side `APP_URL` to your real https URL in production.
    Configure BACHS API credentials and its catalog product IDs before enabling paid plans.
 4. `npm install && npm run dev` (or deploy, for example to Vercel).
 5. Schedule payment detection: call `GET /api/cron/detect` every minute with the header
@@ -124,5 +124,3 @@ Automated refunds, a test-mode payment environment, and network-specific circuit
 ## Security rules
 
 Never store private keys, seed phrases or wallet passwords. API keys are stored as SHA-256 hashes. The service-role key stays server-side.
-#   M o n i f y d  
- 

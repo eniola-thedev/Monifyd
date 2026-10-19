@@ -7,6 +7,7 @@ import { apiAuthError, apiError } from "@/lib/api/errors";
 import { publicId } from "@/lib/security/ids";
 import { emitEvent } from "@/lib/webhooks/emit";
 import { invoiceData } from "@/lib/webhooks/payload";
+import { appUrl } from "@/lib/format";
 
 const InvoiceBody = z.object({
   amount: z.number().positive().max(1_000_000),
@@ -25,8 +26,6 @@ const InvoiceBody = z.object({
   cancel_url: z.string().url().optional(),
   metadata: z.record(z.string(), z.string().max(500)).optional(),
 });
-
-const appUrl = () => process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 export async function POST(req: Request) {
   const ctx = await authenticate(req);
