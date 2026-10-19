@@ -3,6 +3,27 @@ import { paymentData, invoiceData } from "@/lib/webhooks/payload";
 import { emitEvent } from "@/lib/webhooks/emit";
 import { recordOperationalEvent } from "@/lib/operations/events";
 
+const NOTIFICATION_EVENTS = new Set([
+  "payment.underpaid", "payment.overpaid", "payment.expired", "payment.failed",
+]);
+
+function paymentNotification(event: any) {
+  if (event.data_type !== "payment" || !NOTIFICATION_EVENTS.has(event.event_type)) return null;
+  const payment = event.event_data ?? {};
+  const paymentId = String(payment.id ?? "payment");
+  const asset = String(payment.asset ?? "crypto");
+  const network = payment.network ? ` on ${payment.network}` : "";
+  const received = payment.received_amount == null ? "" : ` Received ${payment.received_amount} ${asset}${network}.`;
+  const body = event.event_type === "payment.underpaid"
+    ? `Payment ${paymentId} is underpaid.${received}`
+    : event.event_type === "payment.overpaid"
+      ? `Payment ${paymentId} is overpaid.${received}`
+      : event.event_type === "payment.expired"
+        ? `Payment ${paymentId} expired before it was completed.`
+        : `Payment ${paymentId} could not be completed.${received}`;
+  return { merchant_id: event.merchant_id, event_id: event.event_id, type: event.event_type, body };
+}
+
 export async function processDomainEventOutbox(limit = 10) {
   const db = adminClient();
   const { data, error } = await db.rpc("claim_domain_event_outbox", { p_limit: limit });
@@ -10,6 +31,13 @@ export async function processDomainEventOutbox(limit = 10) {
   let dispatched = 0;
   for (const event of data ?? []) {
     try {
+      const notification = paymentNotification(event);
+      if (notification) {
+        const { error: notificationError } = await db.from("notifications").upsert(notification, {
+          onConflict: "event_id", ignoreDuplicates: true,
+        });
+        if (notificationError) throw new Error(`Could not create payment notification: ${notificationError.message}`);
+      }
       const payloadData = event.data_type === "payment"
         ? await paymentData(db, event.event_data)
         : invoiceData(event.event_data);

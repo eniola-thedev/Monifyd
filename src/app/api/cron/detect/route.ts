@@ -24,6 +24,7 @@ export async function GET(req: Request) {
   let invoiceReminders = { sent: 0, failed: 0 };
   let refundCustomerUpdates = { sent: 0, failed: 0 };
   let accountDeletions = { deleted: 0, failed: 0 };
+  let detectionFailed = false;
   try {
     detection = await runDetection();
     for (const error of detection.errors) {
@@ -34,9 +35,22 @@ export async function GET(req: Request) {
       });
     }
   } catch (error) {
+    detectionFailed = true;
     const message = error instanceof Error ? error.message : "Payment detection failed.";
     failures.push(message);
     await recordOperationalEvent({ source: "chain_detection", severity: "critical", message, fingerprint: "chain_detection:worker" });
+  }
+  try {
+    const { error } = await adminClient().rpc("record_chain_detection_health", {
+      p_status: detectionFailed || detection.errors.length ? "degraded" : "healthy",
+      p_groups_scanned: detection.groups,
+      p_error_count: detection.errors.length + Number(detectionFailed),
+    });
+    if (error) throw new Error(error.message);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Could not record payment detection health.";
+    failures.push(message);
+    await recordOperationalEvent({ source: "chain_detection_health", severity: "error", message, fingerprint: "chain_detection_health:write" });
   }
   try { webhooksSent = await processDueDeliveries(); }
   catch (error) {

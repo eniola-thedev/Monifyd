@@ -5,41 +5,6 @@ import { fail } from "@/lib/flash";
 import { appUrl } from "@/lib/format";
 import { safeInternalPath } from "@/lib/navigation";
 
-export type OtpResult = { ok: true } | { ok: false; error: string };
-
-/** Sends a short email code for an existing account or a new signup. */
-export async function sendEmailOtp(mode: "login" | "signup", emailValue: string, business = ""): Promise<OtpResult> {
-  const email = emailValue.trim().toLowerCase();
-  if (!email || email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { ok: false, error: "Enter a valid email address." };
-  }
-  const supabase = await serverClient();
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: {
-      shouldCreateUser: mode === "signup",
-      ...(mode === "signup" ? { data: { business_name: business.trim().slice(0, 120) || null } } : {}),
-    },
-  });
-  if (error) return { ok: false, error: "We couldn't send a sign-in code. Check the email address and try again." };
-  return { ok: true };
-}
-
-/** Verifies the email code and creates the authenticated Supabase session. */
-export async function verifyEmailOtp(emailValue: string, tokenValue: string, business: string, nextValue: string): Promise<OtpResult> {
-  const email = emailValue.trim().toLowerCase();
-  const token = tokenValue.trim();
-  if (!/^\d{6}$/.test(token)) return { ok: false, error: "Enter the six-digit code from your email." };
-  const supabase = await serverClient();
-  const { data, error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
-  if (error || !data.user) return { ok: false, error: "That code is invalid or expired. Request a new code and try again." };
-  if (business.trim()) {
-    const { error: profileError } = await supabase.from("profiles").update({ business_name: business.trim().slice(0, 120) }).eq("id", data.user.id);
-    if (profileError) return { ok: false, error: "Your email is verified, but we couldn't save your business name. Continue and update it in Settings." };
-  }
-  redirect(safeInternalPath(nextValue));
-}
-
 export async function login(fd: FormData) {
   const next = safeInternalPath(String(fd.get("next") ?? ""));
   const supabase = await serverClient();
