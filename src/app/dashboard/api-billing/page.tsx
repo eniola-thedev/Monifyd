@@ -67,7 +67,7 @@ export default async function ApiBillingPage({ searchParams }: { searchParams: P
                     return <form action={startApiSubscription} key={interval}>
                       <input type="hidden" name="plan" value={plan.id} /><input type="hidden" name="interval" value={interval} />
                       <button className={`btn ${selected ? "" : "btn-primary"}`} style={{ width: "100%" }} disabled={paidActive}>
-                        {formatPlanPrice(amount, currency)} / {interval === "monthly" ? "month" : "year"} · {currency === "NGN" ? "Paystack" : "BACHS"}
+                        {formatPlanPrice(amount, currency)} / {interval === "monthly" ? "month" : "year"}
                       </button>
                     </form>;
                   })}

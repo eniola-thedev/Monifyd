@@ -69,7 +69,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
                         <input type="hidden" name="plan" value={plan.id} />
                         <input type="hidden" name="interval" value={interval} />
                         <button className={`btn ${selected ? "" : "btn-primary"}`} style={{ width: "100%" }} disabled={paidActive}>
-                          {formatPlanPrice(amount, currency)} / {interval === "monthly" ? "month" : "year"} Â· {currency === "NGN" ? "Paystack" : "BACHS"}
+                          {formatPlanPrice(amount, currency)} / {interval === "monthly" ? "month" : "year"}
                         </button>
                       </form>
                     );
