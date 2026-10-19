@@ -7,7 +7,7 @@ export type DetectedTransfer = {
   time?: number;
 };
 
-export type ScanArgs = { network: string; asset: string; address: string; tokenContract: string | null; cursor: string | null };
+export type ScanArgs = { network: string; asset: string; address: string; tokenContract: string | null; cursor: string | null; fromTime?: number };
 
 export interface BlockchainAdapter {
   /** Incoming transfers of `asset` to `address` seen since `cursor`. Returns the new cursor. */

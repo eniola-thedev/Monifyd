@@ -5,7 +5,7 @@ Monifyd currently adds no transaction fee to customer payments. Customers pay th
 
 ## Set up
 
-1. Create a Supabase project and run migrations `0001_init.sql` through `0017_enable_native_eth.sql` in order in the SQL editor. Before deploying this version or applying `0015_bachs_only.sql`, cancel any active subscriptions created with the previous provider in its dashboard.
+1. Create a Supabase project and run every migration in `supabase/migrations/` in numeric order, currently through `0019_chain_detection_health.sql`. Before deploying this version or applying `0015_bachs_only.sql`, cancel any active subscriptions created with the previous provider in its dashboard.
 2. **Google sign-in:** in Google Cloud Console create an OAuth client (Web). Add the redirect URI shown in
    Supabase under Authentication > Providers > Google, then paste the client ID and secret there and enable it.
    In Supabase Authentication > URL Configuration, set the Site URL to your app URL and add
@@ -14,8 +14,10 @@ Monifyd currently adds no transaction fee to customer payments. Customers pay th
 3. `cp .env.example .env.local` and fill it in. Set `WEBHOOK_SIGNING_SECRET_PEPPER` to a randomly generated value of at least 32 bytes (for example, `openssl rand -base64 32`). Keep it in your deployment secret manager and do not rotate it without re-encrypting existing endpoint secrets. Set server-side `APP_URL` to your real https URL in production.
    Configure Paystack NGN plan codes and BACHS USD product IDs before enabling paid plans.
 4. `npm install && npm run dev` (or deploy, for example to Vercel).
-5. Schedule payment detection: call `GET /api/cron/detect` every minute with the header
-   `Authorization: Bearer <CRON_SECRET>` (Vercel Cron on a paid plan, or a pinger such as cron-job.org).
+5. Set `CRON_SECRET` in the Vercel Production environment and deploy. `vercel.json` schedules
+   `GET /api/cron/detect` every minute; Vercel Cron sends the required `Authorization: Bearer <CRON_SECRET>` header.
+   Confirm your Vercel plan supports this frequency. If using an external scheduler instead, disable the Vercel cron
+   or ensure only one scheduler is active, then configure it to send that same header.
    Payments also get checked every few seconds while the customer has the checkout page open. The scheduler also retries webhooks and sends invoice reminders.
 
 After configuring the pepper and applying migration `0008_security_hardening.sql`, run `npm run security:encrypt-webhook-secrets` once to encrypt existing webhook endpoint secrets. New endpoints are encrypted automatically.
@@ -107,7 +109,7 @@ The standalone package in `sdk/` is ready to publish as `@monifyd/sdk`; see [sdk
 - Back up Supabase regularly and test restoring a backup into a separate project. Keep the service-role key and email/RPC credentials in the deployment provider's secret manager; rotate them after any suspected exposure.
 - Configure Resend and verify the sender domain before relying on invoice or reminder email. Reminder and webhook delivery is at-least-once; consumers should safely handle duplicate events.
 - Configure and verify BACHS production credentials and recurring products before turning on subscription checkout. Set `BACHS_ENVIRONMENT=sandbox` only when deliberately using a sandbox account.
-- Apply and test all migrations through `0017_enable_native_eth.sql` in a non-production Supabase project before deploying. Test Dashboard/API checkout, renewal, cancellation, native ETH detection, legacy API access, team invitations, role enforcement, expired Business access, concurrent invitation attempts, account deletion and cancellation at the seven-day boundary, webhook secret access, payment settlement failures, invoice design storage access, and invoice numbering.
+- Apply and test all migrations through `0019_chain_detection_health.sql` in a non-production Supabase project before deploying. Test Dashboard/API checkout, renewal, cancellation, native ETH detection, legacy API access, team invitations, role enforcement, expired Business access, concurrent invitation attempts, account deletion and cancellation at the seven-day boundary, webhook secret access, payment settlement failures, invoice design storage access, and invoice numbering.
 - Grant the admin role only to named trusted operator accounts. Periodically review access and the operational-event queue.
 
 ## Checks

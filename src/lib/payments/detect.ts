@@ -16,7 +16,8 @@ type Result = { groups: number; matched: number; paid: number; underpaid: number
 export async function bindTransfer(db: SupabaseClient, p: any, network: string, txHash: string, units: bigint, decimals: number, confirmations: number): Promise<boolean> {
   const amount = fromBase(units, decimals);
   const { error } = await db.from("payment_transactions").insert({ payment_id: p.id, network, tx_hash: txHash, amount, confirmations });
-  if (error) return false; // a transaction can only ever belong to one payment
+  if (error?.code === "23505") return false; // a transaction can only ever belong to one payment
+  if (error) throw new Error(`Could not bind transfer ${txHash} to payment ${p.id}: ${error.message}`);
   const { data: current, error: currentError } = await db.from("payments").select("status").eq("id", p.id).maybeSingle();
   if (currentError || !current) throw new Error(`Could not load payment ${p.id} after binding a transfer.`);
   const additionalTransfer = p.status === "CONFIRMING" && current.status === "CONFIRMING";
@@ -109,7 +110,10 @@ export async function runDetection(onlyPaymentId?: string): Promise<Result> {
     try {
       const { data: cur, error: cursorError } = await db.from("scan_cursors").select("cursor").eq("network", network).eq("asset", asset).eq("address", address).maybeSingle();
       if (cursorError) throw new Error(`Could not load scan cursor: ${cursorError.message}`);
-      const res = await adapterFor(network).scan({ network, asset, address, tokenContract: m.token_contract, cursor: cur?.cursor ?? null });
+      const res = await adapterFor(network).scan({
+        network, asset, address, tokenContract: m.token_contract, cursor: cur?.cursor ?? null,
+        fromTime: Math.floor((oldest - 3600_000) / 1000),
+      });
       if (res.cursor !== null) {
         const { error: saveCursorError } = await db.from("scan_cursors").upsert({ network, asset, address, cursor: res.cursor, updated_at: new Date().toISOString() });
         if (saveCursorError) throw new Error(`Could not save scan cursor: ${saveCursorError.message}`);
