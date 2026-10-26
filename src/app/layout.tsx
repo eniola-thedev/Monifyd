@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { SiteFooter } from "@/components/SiteFooter";
 import "./globals.css";
 
-export const metadata = { title: "Monifyd", description: "Non-custodial crypto payment gateway" };
+export const metadata = { title: "Monifyd", description: "Non-custodial crypto payment gateway", icons: { icon: "/icon-512.png", shortcut: "/icon-512.png", apple: "/icon-512.png" } };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

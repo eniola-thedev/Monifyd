@@ -16,7 +16,7 @@ export type Started = {
   totalCents: number; feeCents: number; qrSvg: string; expiresAt: string; status: string; receivedAmount: string; decimals: number;
 };
 
-const QUOTE_MINUTES = 15;
+const QUOTE_MINUTES = 30;
 
 export async function startPayment(reference: string, asset: string, network: string): Promise<Started | { error: string }> {
   const p = await loadPayable(reference);
@@ -84,4 +84,22 @@ export async function getStatus(paymentId: string): Promise<{ status?: string; c
     return { status: "EXPIRED", receivedAmount: String(pay.received_amount ?? "0") };
   }
   return { status: pay.status, confirmations: pay.confirmations, receivedAmount: String(pay.received_amount ?? "0") };
+}
+
+/** Lets a customer cancel a checkout before any payment is detected. */
+export async function cancelPayment(paymentId: string): Promise<{ status?: string; error?: string }> {
+  const db = adminClient();
+  const { data: pay } = await db.from("payments").select("status,expires_at").eq("id", paymentId).maybeSingle();
+  if (!pay) return { error: "Payment not found." };
+  if (pay.status !== "AWAITING_PAYMENT") return { status: pay.status, error: "This payment can no longer be cancelled." };
+  if (new Date(pay.expires_at) <= new Date()) {
+    await transition(db, paymentId, "AWAITING_PAYMENT", "EXPIRED");
+    return { status: "EXPIRED" };
+  }
+  const cancelled = await transition(db, paymentId, "AWAITING_PAYMENT", "CANCELLED");
+  if (!cancelled) {
+    const { data: latest } = await db.from("payments").select("status").eq("id", paymentId).maybeSingle();
+    return { status: latest?.status, error: "This payment can no longer be cancelled." };
+  }
+  return { status: "CANCELLED" };
 }
