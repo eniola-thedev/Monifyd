@@ -90,7 +90,7 @@ export default function Checkout({ reference, options, amountCents, feeCents, cu
         <div className="qr" role="img" aria-label="QR code for the payment address" dangerouslySetInnerHTML={{ __html: pay.qrSvg }} />
         <p className="hint" style={{ textAlign: "center", fontSize: ".85rem", color: "var(--muted)" }}>Send the exact amount shown. Price locked for <strong>{timerLabel}</strong> more.</p>
       </>)}
-      {status === "AWAITING_PAYMENT" && <button type="button" className="btn" style={{ width: "100%", marginTop: 12 }} disabled={busy} onClick={cancel}>{busy ? "Cancelling…" : "Cancel payment"}</button>}
+      {status === "AWAITING_PAYMENT" && <button type="button" className="btn" style={{ width: "100%", marginTop: 12 }} disabled={busy} onClick={cancel}>{busy ? "Cancellingâ€¦" : "Cancel payment"}</button>}
       {status === "CANCELLED" && <p className="flash" role="status">Payment cancelled.</p>}
       {status === "EXPIRED" && <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => { setPay(null); setStatus("AWAITING_PAYMENT"); }}>Get a new quote</button>}
       {done && returnUrl && <a className="btn btn-primary" style={{ width: "100%" }} href={returnUrl}>Return to merchant</a>}
