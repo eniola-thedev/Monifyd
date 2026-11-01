@@ -71,7 +71,7 @@ export const sitePages: Record<string, SitePage> = {
     title: "Contact",
     intro: "For product, account, or integration questions, contact the Monifyd team.",
     sections: [
-      { heading: "Get in touch", paragraphs: ["Email support@monifyd.com. For API questions, include the endpoint and request ID, but never send your secret API key, wallet seed phrase, or private key."] },
+      { heading: "Get in touch", paragraphs: ["For API questions, include the endpoint and request ID, but never send your secret API key, wallet seed phrase, or private key."] },
       { heading: "Payment support", paragraphs: ["Include the payment or invoice ID and the public transaction hash where relevant. Do not share wallet credentials."] },
     ],
   },
@@ -84,7 +84,7 @@ export const sitePages: Record<string, SitePage> = {
       { heading: "Blockchain and service providers", paragraphs: ["Public blockchain activity is visible on its network and may be associated with a receiving address. Monifyd uses Supabase for authentication and database services, Resend to send email, and BACHS or Paystack to process subscription billing. Configured blockchain RPC and pricing providers receive the requests needed to check transfers and quotes. These providers process information under their own privacy terms."] },
       { heading: "Wallet credentials", paragraphs: ["Monifyd does not request or store seed phrases, wallet passwords, or private keys. Receiving addresses and public transaction data are not secret credentials."] },
       { heading: "Retention and security", paragraphs: ["We retain account and transaction records for as long as needed to operate the service, meet operational requirements, resolve disputes, and protect the service. We use access controls and security measures, but no internet service can guarantee absolute security."] },
-      { heading: "Your privacy rights and data deletion", paragraphs: ["Depending on the laws that apply, you may have rights to be informed, access or correct personal data, object to or restrict processing, request portability or erasure, and complain to a supervisory authority. Some rights are subject to legal exceptions. You can manage profile information in Dashboard → Settings or contact support@monifyd.com to make a privacy request. To delete your account, schedule deletion in Dashboard → Settings. Deletion starts after a seven-day grace period, during which you can cancel it from the account-deletion page. Owners must stop subscription renewal before scheduling deletion. When deletion completes, the account and associated workspace data are permanently deleted from the application. Invoice-reminder opt-outs are retained to avoid sending further reminders to that address."] },
+      { heading: "Your privacy rights and data deletion", paragraphs: ["Depending on the laws that apply, you may have rights to be informed, access or correct personal data, object to or restrict processing, request portability or erasure, and complain to a supervisory authority. Some rights are subject to legal exceptions. You can manage profile information in Dashboard → Settings or email monifyd1@gmail.com to make a privacy request. To delete your account, schedule deletion in Dashboard → Settings. Deletion starts after a seven-day grace period, during which you can cancel it from the account-deletion page. Owners must stop subscription renewal before scheduling deletion. When deletion completes, the account and associated workspace data are permanently deleted from the application. Invoice-reminder opt-outs are retained to avoid sending further reminders to that address."] },
       { heading: "Policy changes", paragraphs: ["We may update this policy as the service changes. The updated date at the top of this page shows when the current version was published."] },
     ],
   },
@@ -96,7 +96,7 @@ export const sitePages: Record<string, SitePage> = {
       { heading: "Analytics and advertising", paragraphs: ["The current application dependencies and source do not include analytics, advertising, or session-recording SDKs. Monifyd does not use optional analytics or advertising cookies."] },
       { heading: "Third-party services", paragraphs: ["The app uses Supabase for authentication and database requests, Resend for email delivery, BACHS or Paystack for subscription billing, and configured RPC and pricing services for blockchain operations. These are service integrations, not analytics SDKs; they receive data needed for the feature being used. Public pages also request web fonts from Google Fonts, which can expose standard connection data such as your IP address to Google."] },
       { heading: "Managing cookies", paragraphs: ["You can block or clear cookies in your browser settings. Blocking essential cookies may prevent sign-in or stop the notice from remembering your dismissal. The cookie notice can be shown again by clearing the monifyd_cookie_notice cookie."] },
-      { heading: "Contact", paragraphs: ["For questions about cookies or personal information, email support@monifyd.com or read the Privacy Policy."] },
+      { heading: "Contact", paragraphs: ["For questions about cookies or personal information, email monifyd1@gmail.com or read the Privacy Policy."] },
     ],
   },
   terms: {
@@ -108,7 +108,7 @@ export const sitePages: Record<string, SitePage> = {
       { heading: "Payments and availability", paragraphs: ["Blockchain transactions may be delayed, irreversible, or affected by network conditions. Payment status depends on data available from network providers and the confirmation rules configured by Monifyd. A payment request is not a guarantee that a transfer will settle successfully."] },
       { heading: "Fees, refunds, and plans", paragraphs: ["Monifyd currently adds no transaction fee to customer payments. Paid plans are billed through BACHS. Merchants handle customer refunds themselves. See Fees & Refunds for details."] },
       { heading: "Suspension and termination", paragraphs: ["We may restrict or suspend access where needed to protect the service, comply with law, investigate suspected abuse, or address a security issue. You can stop using the service and manage plan cancellation from the dashboard, subject to the plan billing period."] },
-      { heading: "Changes and contact", paragraphs: ["We may update these terms as the service evolves. Continued use after an updated effective date means the updated terms apply to future use. Contact support@monifyd.com with questions."] },
+      { heading: "Changes and contact", paragraphs: ["We may update these terms as the service evolves. Continued use after an updated effective date means the updated terms apply to future use. Contact monifyd1@gmail.com with questions."] },
     ],
   },
   security: {
@@ -121,7 +121,7 @@ export const sitePages: Record<string, SitePage> = {
       { heading: "Transaction data", paragraphs: ["Payment status changes and their history are updated together. Settlement records, fee entries, notifications, and audit entries commit together or fail together. Database access policies restrict transaction records to the merchant workspace. Confirmation status depends on blockchain data from external network providers."] },
       { heading: "Webhook delivery", paragraphs: ["Webhook endpoints must use HTTPS. Before delivery, Monifyd rejects private and reserved IP ranges, pins the connection to the validated public IP, and does not follow redirects."] },
       { heading: "Non-custodial wallets", paragraphs: ["Funds go directly to merchant receiving addresses. Monifyd does not request or store private keys, seed phrases, or wallet passwords. Receiving addresses and transaction hashes are public blockchain data."] },
-      { heading: "Report a security issue", paragraphs: ["Please report suspected vulnerabilities to security@monifyd.com. Include reproduction steps and the affected URL or component. Do not include customer secrets, API keys, private keys, or seed phrases."] },
+      { heading: "Report a security issue", paragraphs: ["Please report suspected vulnerabilities to monifyd1@gmail.com. Include reproduction steps and the affected URL or component. Do not include customer secrets, API keys, private keys, or seed phrases."] },
       { heading: "Security limits", paragraphs: ["These measures reduce risk but cannot eliminate it. Blockchain transactions may be irreversible, and external RPC, email, hosting, and billing providers have their own security and availability characteristics."] },
     ],
   },
@@ -130,7 +130,7 @@ export const sitePages: Record<string, SitePage> = {
     intro: "Use Monifyd lawfully and in ways that protect customers, merchants, networks, and the service.",
     sections: [
       { heading: "You may not use Monifyd to", bullets: ["Facilitate fraud, theft, sanctions evasion, money laundering, terrorist financing, or other illegal activity.", "Sell prohibited goods or services or violate another person's rights.", "Misrepresent payment status, merchant identity, fees, or refund terms to customers.", "Probe, disrupt, overload, or attempt unauthorized access to Monifyd, its providers, or another user's account.", "Use the API or webhooks to transmit malware, spam, or unlawful content.", "Submit private keys, seed phrases, passwords, or other wallet access credentials."] },
-      { heading: "Enforcement", paragraphs: ["We may investigate suspected violations and restrict or suspend accounts, API keys, or payment requests where reasonably needed to protect users, the service, or comply with law. Contact support@monifyd.com if you believe a restriction was made in error."] },
+      { heading: "Enforcement", paragraphs: ["We may investigate suspected violations and restrict or suspend accounts, API keys, or payment requests where reasonably needed to protect users, the service, or comply with law. Contact monifyd1@gmail.com if you believe a restriction was made in error."] },
     ],
   },
   "fees-refunds": {
@@ -141,7 +141,7 @@ export const sitePages: Record<string, SitePage> = {
       { heading: "Merchant subscriptions", paragraphs: ["Dashboard and API subscriptions are separate products, with limits and prices listed on Pricing. Each paid subscription is billed independently through BACHS and can be cancelled separately. Cancellation takes effect according to the subscription period shown in the dashboard."] },
       { heading: "Customer refunds", paragraphs: ["Monifyd does not custody, initiate, or independently verify refund transfers. The merchant sends any refund from their own wallet and is responsible for confirming the destination, amount, network, and transaction."] },
       { heading: "Refund tracking", paragraphs: ["Merchants can record full or partial refunds against a confirmed payment and update each record's status. Recorded refund totals cannot exceed the amount received; failed refund attempts release the reserved amount. Where an email is supplied, Monifyd can send status updates based on the merchant's recorded status."] },
-      { heading: "Contact", paragraphs: ["For a refund on a purchase, contact the merchant that received the payment. For Monifyd subscription or service questions, email support@monifyd.com."] },
+      { heading: "Contact", paragraphs: ["For a refund on a purchase, contact the merchant that received the payment. For Monifyd subscription or service questions, email monifyd1@gmail.com."] },
     ],
   },
 };

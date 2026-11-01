@@ -24,7 +24,7 @@ export default async function UnsubscribePage({ params }: { params: Promise<{ to
       <div style={{ marginBottom: 24 }}><Logo /></div>
       {!preference ? <>
         <h1>Link unavailable</h1>
-        <p style={{ color: "var(--muted)", marginTop: 12 }}>This invoice-reminder link is invalid. If you still need help, contact support@monifyd.com.</p>
+        <p style={{ color: "var(--muted)", marginTop: 12 }}>This invoice-reminder link is invalid. If you still need help, contact <a href="mailto:monifyd1@gmail.com">monifyd1@gmail.com</a>.</p>
       </> : preference.unsubscribed_at ? <>
         <h1>Invoice reminders stopped</h1>
         <p style={{ color: "var(--muted)", marginTop: 12 }}>Automatic invoice reminders will no longer be sent to this address. Invoice, payment, refund, and account emails are not affected.</p>

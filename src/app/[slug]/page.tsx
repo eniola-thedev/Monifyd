@@ -29,6 +29,7 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
           <section className="site-page-section" key={section.heading}>
             <h2>{section.heading}</h2>
             {section.paragraphs?.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+            {slug === "contact" && section.heading === "Get in touch" && <p><a href="mailto:monifyd1@gmail.com">monifyd1@gmail.com</a></p>}
             {section.bullets && <ul>{section.bullets.map((item) => <li key={item}>{item}</li>)}</ul>}
           </section>
         ))}
