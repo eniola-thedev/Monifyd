@@ -32,6 +32,7 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
             {section.bullets && <ul>{section.bullets.map((item) => <li key={item}>{item}</li>)}</ul>}
           </section>
         ))}
+        {slug === "privacy" && <p className="site-page-action"><a className="btn btn-primary" href="/dashboard/settings">Manage account or request deletion</a></p>}
         {(slug === "developers" || slug === "api-reference") && <p className="site-page-action"><a className="btn btn-primary" href="/docs">Open API documentation</a></p>}
         {slug === "pricing" && <p className="site-page-action"><a className="btn btn-primary" href="/signup">Get started</a></p>}
       </article>

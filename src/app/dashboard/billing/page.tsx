@@ -31,7 +31,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
     <>
       <div className="head"><h1>Upgrade</h1><a className="btn btn-sm" href="/dashboard/api-billing">API plans</a></div>
       <Flash error={sp.error} message={sp.message} />
-      <p className="hint" style={{ marginBottom: 12 }}>{currency === "NGN" ? "Nigerian naira subscriptions are processed securely by Paystack." : "USD subscriptions are processed securely by BACHS."}</p>
+      <p className="hint" style={{ marginBottom: 12 }}>{currency === "NGN" ? "Nigerian naira subscriptions are processed by Paystack." : "USD subscriptions are processed by BACHS."}</p>
       {attemptResult.data?.status === "PENDING" && <section className="card">
         <p>{attemptResult.data.billing_provider} is confirming your subscription. This page will show your plan once confirmation arrives; refresh in a moment.</p>
       </section>}

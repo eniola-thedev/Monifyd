@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Monifyd: accept crypto payments without the infrastructure</title>
 <meta name="description" content="Monifyd is a non-custodial crypto payment gateway. Send payment links and invoices, get paid in BTC, ETH, SOL, USDC or USDT, and know the moment it lands.">
+<link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+<link rel="apple-touch-icon" href="/icon-512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -137,13 +139,19 @@ footer.site{padding:56px 0 24px;text-align:left}
 .footer-col a{color:var(--on-ink-muted);font-size:.88rem;text-decoration:none}
 .footer-col a:hover{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
 .fine{margin-top:0;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.cookie-notice{position:fixed;z-index:50;inset-inline:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(680px,calc(100% - 32px));margin-inline:auto;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;background:var(--ink);color:var(--on-ink);border-radius:16px}
+.cookie-notice[hidden]{display:none}
+.cookie-notice p{max-width:56ch;font-size:.92rem;line-height:1.5}
+.cookie-notice a{color:var(--accent);text-underline-offset:3px}
+.cookie-notice>div{display:flex;align-items:center;gap:16px}
+.cookie-notice .btn{flex:none}
 
 /* motion: one moment, opt-in */
 @media (prefers-reduced-motion:no-preference){.dot{animation:pulse 1.6s ease-in-out infinite}@keyframes pulse{50%{opacity:.35}}}
 
 @media (max-width:980px){.stage{--s:.82}.grid{grid-template-columns:repeat(2,1fr)}.dev-grid{grid-template-columns:1fr}.footer-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.footer-brand{grid-column:1/-1}}
 @media (max-width:820px){.nav,.login{display:none}.menu{display:block}}
-@media (max-width:640px){.grid,.steps{grid-template-columns:1fr}.hero{padding-top:48px}.stage{height:300px;margin-top:28px;--s:.6}.f-left{display:none}.f-right{transform:translateX(120px) rotate(3deg)}.btn{white-space:normal;text-align:center}section.light,.dev{padding:64px 0}.footer-grid{gap:28px 18px}.fine{flex-direction:column}}
+@media(max-width:640px){.grid,.steps{grid-template-columns:1fr}.hero{padding-top:48px}.stage{height:300px;margin-top:28px;--s:.6}.f-left{display:none}.f-right{transform:translateX(120px) rotate(3deg)}.btn{white-space:normal;text-align:center}section.light,.dev{padding:64px 0}.footer-grid{gap:28px 18px}.fine{flex-direction:column}.cookie-notice{inset-inline:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:calc(100% - 24px);align-items:flex-start;flex-direction:column;gap:12px;padding:14px}.cookie-notice>div{width:100%;justify-content:space-between}}
 </style>
 </head>
 <body>
@@ -175,7 +183,7 @@ footer.site{padding:56px 0 24px;text-align:left}
   <div class="hero" id="top">
     <div class="wrap">
       <h1>Accept crypto payments without the infrastructure.</h1>
-      <p class="lede">Monifyd lets you send payment links and invoices, get paid in BTC, ETH, SOL, USDC or USDT straight to your own wallet, and know the moment each payment is confirmed.</p>
+      <p class="lede">Monifyd lets you send payment links and invoices, get paid in BTC, ETH, SOL, USDC or USDT straight to your own wallet, and track each payment from detection through confirmation.</p>
       <div class="cta">
         <a class="btn btn-primary" href="/signup">Start accepting crypto</a>
         <a class="btn btn-ghost" href="#developers">Explore the API</a>
@@ -274,10 +282,26 @@ footer.site{padding:56px 0 24px;text-align:left}
       <nav class="footer-col" aria-label="Product"><h2>Product</h2><a href="/#features">Payment Links</a><a href="/developers">API</a><a href="/pricing">Pricing</a><a href="/supported-networks">Supported Networks</a></nav>
       <nav class="footer-col" aria-label="Developers"><h2>Developers</h2><a href="/docs">Documentation</a><a href="/api-reference">API Reference</a><a href="/webhooks">Webhooks</a><a href="/status">API Status</a></nav>
       <nav class="footer-col" aria-label="Company"><h2>Company</h2><a href="/about">About</a><a href="/contact">Contact</a><a href="https://x.com/monifyd" target="_blank" rel="noreferrer">X / Twitter</a></nav>
-      <nav class="footer-col" aria-label="Legal and security"><h2>Legal &amp; Security</h2><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a><a href="/security">Security</a><a href="/acceptable-use">Acceptable Use</a><a href="/fees-refunds">Fees &amp; Refunds</a></nav>
+      <nav class="footer-col" aria-label="Legal and security"><h2>Legal &amp; Security</h2><a href="/privacy">Privacy Policy</a><a href="/cookie-policy">Cookie Policy</a><a href="/terms">Terms of Service</a><a href="/security">Security</a><a href="/acceptable-use">Acceptable Use</a><a href="/fees-refunds">Fees &amp; Refunds</a></nav>
     </div>
     <div class="fine"><span>© 2026 Monifyd</span><span>Monifyd never holds your funds or your keys.</span></div>
   </div>
 </footer>
+<aside class="cookie-notice" id="cookie-notice" role="region" aria-label="Cookie notice">
+  <p>Monifyd uses essential cookies for sign-in and to remember this notice. We do not use analytics or advertising cookies.</p>
+  <div><a href="/cookie-policy">Cookie policy</a><button type="button" class="btn btn-primary" id="cookie-notice-dismiss">Dismiss</button></div>
+</aside>
+<script>
+  (() => {
+    const notice = document.getElementById("cookie-notice");
+    const dismissed = document.cookie.split("; ").some((cookie) => cookie.startsWith("monifyd_cookie_notice=dismissed"));
+    if (dismissed) notice.hidden = true;
+    document.getElementById("cookie-notice-dismiss").addEventListener("click", () => {
+      const secure = location.protocol === "https:" ? "; Secure" : "";
+      document.cookie = `monifyd_cookie_notice=dismissed; Max-Age=15552000; Path=/; SameSite=Lax${secure}`;
+      notice.hidden = true;
+    });
+  })();
+</script>
 </body>
 </html>

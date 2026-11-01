@@ -36,7 +36,7 @@ export default async function ApiBillingPage({ searchParams }: { searchParams: P
     <>
       <div className="head"><h1>API plans &amp; billing</h1><div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><Link className="btn btn-sm" href="/dashboard/developers">API keys</Link><Link className="btn btn-sm" href="/dashboard/billing">Dashboard plans</Link></div></div>
       <Flash error={sp.error} message={sp.message} />
-      <p className="hint" style={{ marginBottom: 12 }}>{currency === "NGN" ? "Nigerian naira subscriptions are processed securely by Paystack." : "USD subscriptions are processed securely by BACHS."}</p>
+      <p className="hint" style={{ marginBottom: 12 }}>{currency === "NGN" ? "Nigerian naira subscriptions are processed by Paystack." : "USD subscriptions are processed by BACHS."}</p>
       {attemptResult.data?.status === "PENDING" && <section className="card"><p>{attemptResult.data.billing_provider} is confirming your API subscription. Refresh in a moment to see the updated plan.</p></section>}
       <section className="card"><h2>Current API plan</h2>
         {apiPlanActive ? <>

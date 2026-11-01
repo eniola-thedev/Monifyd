@@ -70,7 +70,16 @@ export async function processDueInvoiceReminders(limit = 50) {
       const { data: profile, error: profileError } = await db.from("profiles")
         .select("business_name").eq("id", invoice.merchant_id).maybeSingle();
       if (profileError) throw new Error(`Could not load merchant profile: ${profileError.message}`);
-      const content = invoiceReminderEmail(invoice, profile?.business_name ?? "Your merchant", reminder.reminder_type === "due_today");
+      const { data: unsubscribeToken, error: unsubscribeError } = await db.rpc("get_or_create_invoice_reminder_unsubscribe_token", {
+        p_email: invoice.customer_email,
+      });
+      if (unsubscribeError) throw new Error(`Could not prepare the invoice-reminder unsubscribe link: ${unsubscribeError.message}`);
+      if (!unsubscribeToken) {
+        const { error } = await db.from("invoice_reminders").update({ status: "SKIPPED" }).eq("id", reminder.id);
+        if (error) throw new Error(`Could not skip an unsubscribed invoice reminder: ${error.message}`);
+        continue;
+      }
+      const content = invoiceReminderEmail(invoice, profile?.business_name ?? "Your merchant", reminder.reminder_type === "due_today", unsubscribeToken);
       await sendEmail({ to: invoice.customer_email, ...content });
       const { error } = await db.from("invoice_reminders")
         .update({ status: "SENT", sent_at: new Date().toISOString(), last_error: null }).eq("id", reminder.id);

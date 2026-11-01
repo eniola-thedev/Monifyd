@@ -5,13 +5,13 @@ Monifyd currently adds no transaction fee to customer payments. Customers pay th
 
 ## Set up
 
-1. Create a Supabase project and run every migration in `supabase/migrations/` in numeric order, currently through `0019_chain_detection_health.sql`. Before deploying this version or applying `0015_bachs_only.sql`, cancel any active subscriptions created with the previous provider in its dashboard.
+1. Create a Supabase project and run every migration in `supabase/migrations/` in numeric order, currently through `0020_invoice_reminder_unsubscribes.sql`. Before deploying this version or applying `0015_bachs_only.sql`, cancel any active subscriptions created with the previous provider in its dashboard.
 2. **Google sign-in:** in Google Cloud Console create an OAuth client (Web). Add the redirect URI shown in
    Supabase under Authentication > Providers > Google, then paste the client ID and secret there and enable it.
-   In Supabase Authentication > URL Configuration, set the Site URL to your app URL and add
+   In Supabase Authentication > URL Configuration, set the Site URL to `https://monifyd.com` in production and add
    `<your app URL>/auth/callback` to the redirect URLs.
    In Supabase Authentication > Providers > Email, enable email confirmations to require verification for new email/password accounts. Set up SMTP so confirmation messages are delivered reliably.
-3. `cp .env.example .env.local` and fill it in. Set `WEBHOOK_SIGNING_SECRET_PEPPER` to a randomly generated value of at least 32 bytes (for example, `openssl rand -base64 32`). Keep it in your deployment secret manager and do not rotate it without re-encrypting existing endpoint secrets. Set server-side `APP_URL` to your real https URL in production.
+3. `cp .env.example .env.local` and fill it in. Set `WEBHOOK_SIGNING_SECRET_PEPPER` to a randomly generated value of at least 32 bytes (for example, `openssl rand -base64 32`). Keep it in your deployment secret manager and do not rotate it without re-encrypting existing endpoint secrets. Set `APP_URL` and `NEXT_PUBLIC_APP_URL` to `https://monifyd.com` in your production environment.
    Configure Paystack NGN plan codes and BACHS USD product IDs before enabling paid plans.
 4. `npm install && npm run dev` (or deploy, for example to Vercel).
 5. Set `CRON_SECRET` in the Vercel Production environment and deploy. `vercel.json` schedules
