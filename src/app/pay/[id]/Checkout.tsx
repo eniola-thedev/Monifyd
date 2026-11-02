@@ -43,11 +43,18 @@ export default function Checkout({ reference, options, amountCents, feeCents, cu
     return () => clearInterval(timer);
   }, [pay]);
 
-  const cancel = () => run(async () => {
-    const result = await cancelPayment(pay!.paymentId);
-    if (result.status) setStatus(result.status);
-    if (result.error) setError(result.error);
-  });
+  const cancel = () => {
+    setError("");
+    run(async () => {
+      try {
+        const result = await cancelPayment(pay!.paymentId);
+        if (result.status) setStatus(result.status);
+        if (result.error) setError(result.error);
+      } catch {
+        setError("We couldn't cancel this payment right now. Please try again.");
+      }
+    });
+  };
 
   const copy = async (text: string, key: string) => { await navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(""), 1500); };
 

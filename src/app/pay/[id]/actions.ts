@@ -88,18 +88,26 @@ export async function getStatus(paymentId: string): Promise<{ status?: string; c
 
 /** Lets a customer cancel a checkout before any payment is detected. */
 export async function cancelPayment(paymentId: string): Promise<{ status?: string; error?: string }> {
-  const db = adminClient();
-  const { data: pay } = await db.from("payments").select("status,expires_at").eq("id", paymentId).maybeSingle();
-  if (!pay) return { error: "Payment not found." };
-  if (pay.status !== "AWAITING_PAYMENT") return { status: pay.status, error: "This payment can no longer be cancelled." };
-  if (new Date(pay.expires_at) <= new Date()) {
-    await transition(db, paymentId, "AWAITING_PAYMENT", "EXPIRED");
-    return { status: "EXPIRED" };
+  try {
+    const db = adminClient();
+    const { data: pay, error } = await db.from("payments").select("status,expires_at").eq("id", paymentId).maybeSingle();
+    if (error) throw new Error(`Could not load payment before cancellation: ${error.message}`);
+    if (!pay) return { error: "Payment not found." };
+    if (pay.status !== "AWAITING_PAYMENT") return { status: pay.status, error: "This payment can no longer be cancelled." };
+    if (new Date(pay.expires_at) <= new Date()) {
+      await transition(db, paymentId, "AWAITING_PAYMENT", "EXPIRED");
+      return { status: "EXPIRED" };
+    }
+    const cancelled = await transition(db, paymentId, "AWAITING_PAYMENT", "CANCELLED");
+    if (!cancelled) {
+      const { data: latest, error: latestError } = await db.from("payments").select("status").eq("id", paymentId).maybeSingle();
+      if (latestError) throw new Error(`Could not reload payment after cancellation conflict: ${latestError.message}`);
+      if (latest?.status === "CANCELLED") return { status: "CANCELLED" };
+      return { status: latest?.status, error: "This payment can no longer be cancelled." };
+    }
+    return { status: "CANCELLED" };
+  } catch (error) {
+    console.error("Could not cancel checkout payment.", { paymentId, error });
+    return { error: "We couldn't cancel this payment right now. Please try again." };
   }
-  const cancelled = await transition(db, paymentId, "AWAITING_PAYMENT", "CANCELLED");
-  if (!cancelled) {
-    const { data: latest } = await db.from("payments").select("status").eq("id", paymentId).maybeSingle();
-    return { status: latest?.status, error: "This payment can no longer be cancelled." };
-  }
-  return { status: "CANCELLED" };
 }
