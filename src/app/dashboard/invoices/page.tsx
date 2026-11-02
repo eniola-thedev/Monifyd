@@ -7,7 +7,8 @@ import { activePlan } from "@/lib/billing/plans";
 import { DEFAULT_INVOICE_DESIGN, parseInvoiceDesign } from "@/lib/invoices/design";
 import { adminClient } from "@/lib/supabase/admin";
 import { InvoiceComposer } from "./InvoiceComposer";
-import { createInvoice, sendInvoice, cancelInvoice } from "./actions";
+import { SendInvoiceButton } from "./SendInvoiceButton";
+import { createInvoice, cancelInvoice } from "./actions";
 
 export const metadata = { title: "Invoices | Monifyd" };
 
@@ -78,7 +79,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
                 <td className="invoice-actions" data-label="Actions">
                   <a className="btn btn-sm" href={`/pay/${i.id}`} target="_blank" rel="noreferrer">View</a>
                   {workspaceRole !== "VIEWER" && ["DRAFT", "SENT", "AWAITING_PAYMENT"].includes(i.status) && <>
-                    <form action={sendInvoice}><input type="hidden" name="id" value={i.id} /><button className="btn btn-sm">{i.status === "DRAFT" ? "Send" : "Resend"}</button></form>
+                    <SendInvoiceButton invoiceId={i.id} label={i.status === "DRAFT" ? "Send" : "Resend"} />
                     <form action={cancelInvoice}><input type="hidden" name="id" value={i.id} /><button className="btn btn-sm btn-danger">Cancel</button></form></>}
                 </td></tr>
             ))}

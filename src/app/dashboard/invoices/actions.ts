@@ -120,14 +120,22 @@ export async function createInvoice(fd: FormData) {
   done(PATH, "Invoice saved as a draft.");
 }
 
-export async function sendInvoice(fd: FormData) {
-  const { user, supabase } = await requireEditor();
-  let error: string | null = null;
-  try { await sendInvoiceEmail(String(fd.get("id")), user.id); }
-  catch (e) { error = e instanceof Error ? e.message : "Could not send the email."; }
-  revalidatePath(PATH);
-  if (error) fail(PATH, error);
-  done(PATH, "Invoice emailed to your customer.");
+export async function sendInvoice(fd: FormData): Promise<{ ok: boolean }> {
+  const { user } = await requireEditor();
+  const invoiceId = String(fd.get("id") ?? "");
+  try {
+    await sendInvoiceEmail(invoiceId, user.id);
+    revalidatePath(PATH);
+    return { ok: true };
+  } catch (error) {
+    console.error("Could not send invoice email.", { invoiceId, error });
+    try {
+      revalidatePath(PATH);
+    } catch (revalidationError) {
+      console.error("Could not refresh invoices after an email send failure.", { invoiceId, error: revalidationError });
+    }
+    return { ok: false };
+  }
 }
 
 export async function cancelInvoice(fd: FormData) {
