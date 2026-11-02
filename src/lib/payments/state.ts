@@ -24,7 +24,7 @@ export async function transition(db: SupabaseClient, id: string, from: string, t
   });
   if (error) throw new Error(`Could not transition payment ${id}: ${error.message}`);
   if (!data) return false;
-  await processDomainEventOutbox();
+  if (to !== "CANCELLED") await processDomainEventOutbox();
   return true;
 }
 
