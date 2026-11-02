@@ -1,2 +1,15 @@
 User-agent: *
 Allow: /
+Disallow: /account-deletion-pending
+Disallow: /account-suspended
+Disallow: /api/
+Disallow: /auth/
+Disallow: /dashboard
+Disallow: /login
+Disallow: /pay/
+Disallow: /signup
+Disallow: /unsubscribe/
+Disallow: /workspace-deletion-pending
+Disallow: /workspace-unavailable
+
+Sitemap: https://monifyd.com/sitemap.xml
