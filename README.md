@@ -5,7 +5,7 @@ Monifyd currently adds no transaction fee to customer payments. Customers pay th
 
 ## Set up
 
-1. Create a Supabase project and run every migration in `supabase/migrations/` in numeric order, currently through `0020_invoice_reminder_unsubscribes.sql`. Before deploying this version or applying `0015_bachs_only.sql`, cancel any active subscriptions created with the previous provider in its dashboard.
+1. Create a Supabase project and run every migration in `supabase/migrations/` in numeric order, currently through `0021_login_security_limits.sql`. Before deploying this version or applying `0015_bachs_only.sql`, cancel any active subscriptions created with the previous provider in its dashboard.
 2. **Google sign-in:** in Google Cloud Console create an OAuth client (Web). Add the redirect URI shown in
    Supabase under Authentication > Providers > Google, then paste the client ID and secret there and enable it.
    In Supabase Authentication > URL Configuration, set the Site URL to `https://monifyd.com` in production and add
@@ -19,6 +19,8 @@ Monifyd currently adds no transaction fee to customer payments. Customers pay th
    Confirm your Vercel plan supports this frequency. If using an external scheduler instead, disable the Vercel cron
    or ensure only one scheduler is active, then configure it to send that same header.
    Payments also get checked every few seconds while the customer has the checkout page open. The scheduler also retries webhooks and sends invoice reminders.
+
+Login allows 30 attempts per client IP per 15 minutes. Five incorrect-password attempts for an email address within 15 minutes trigger a 15-minute lockout; a successful login clears that account's failed-attempt counter. The login limiter requires the hosting proxy to provide a trusted client IP in `cf-connecting-ip`, `x-real-ip`, or `x-forwarded-for`; configure the proxy to overwrite or sanitize these headers rather than passing through client-supplied values.
 
 After configuring the pepper and applying migration `0008_security_hardening.sql`, run `npm run security:encrypt-webhook-secrets` once to encrypt existing webhook endpoint secrets. New endpoints are encrypted automatically.
 

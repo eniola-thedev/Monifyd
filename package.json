@@ -16,6 +16,8 @@
     "test:refund-email": "tsx src/lib/email/refund-update.test.ts",
     "test:refund-amount": "tsx src/lib/refunds/amount.test.ts",
     "test:billing-plans": "tsx src/lib/billing/plans.test.ts",
+    "test:disposable-email": "tsx src/lib/auth/disposable-email.test.ts",
+    "test:login-security": "tsx src/lib/auth/login-security.test.ts",
     "security:encrypt-webhook-secrets": "tsx scripts/encrypt-webhook-secrets.ts"
   },
   "dependencies": {
