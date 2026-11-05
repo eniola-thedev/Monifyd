@@ -34,6 +34,8 @@ Each open payment gets a unique amount (a few base units of extra "dust", well u
 The detector watches the merchant's wallet, matches an incoming transfer to the payment with exactly that amount,
 tracks confirmations, and marks the payment PAID at the network's required depth. Only exact matches are
 attributed automatically. A transfer with a different amount stays unmatched and the quote expires.
+Customers can leave checkout without cancelling the quote and return later through the same invoice link;
+pending payment and invoice statuses refresh automatically in the dashboard.
 
 Supported assets: BTC on Bitcoin; native ETH, USDC and USDT on Ethereum; USDC on Base and Polygon; USDT on BNB Chain; and SOL, USDC and USDT on Solana. Native ETH detection scans Ethereum blocks for direct transfers to checkout addresses. Public RPC endpoints are rate-limited: use dedicated ones for real traffic.
 

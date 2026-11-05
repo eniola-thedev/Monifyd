@@ -165,7 +165,7 @@ export async function runDetection(onlyPaymentId?: string): Promise<Result> {
   }
 
   // 2. Track confirmations. At the required depth, compare what arrived with what was asked for.
-  let cq = db.from("payments").select("*").eq("livemode", true).in("status", ["PAYMENT_DETECTED", "CONFIRMING"]);
+  let cq = db.from("payments").select("*").eq("livemode", true).in("status", ["AWAITING_PAYMENT", "PAYMENT_DETECTED", "CONFIRMING"]);
   if (onlyPaymentId) cq = cq.eq("id", onlyPaymentId);
   const { data: confirming, error: confirmingError } = await cq;
   if (confirmingError) throw new Error(`Could not load payments awaiting confirmation: ${confirmingError.message}`);
@@ -190,7 +190,28 @@ export async function runDetection(onlyPaymentId?: string): Promise<Result> {
       }
       const confirmedUnits = confirmedTotal(transferConfirmations, dec, required(p.network));
       let status = p.status;
-      if (status === "PAYMENT_DETECTED" && (await transition(db, p.id, "PAYMENT_DETECTED", "CONFIRMING"))) status = "CONFIRMING";
+      if (status === "AWAITING_PAYMENT") {
+        const detectedUnits = txs.reduce((sum: bigint, tx: any) => sum + toBase(String(tx.amount), dec), 0n);
+        const detectedConfirmations = Math.min(...txs.map((tx: any) => Number(tx.confirmations)));
+        if (await transition(db, p.id, "AWAITING_PAYMENT", "PAYMENT_DETECTED", {
+          received_amount: fromBase(detectedUnits, dec), confirmations: detectedConfirmations,
+        })) {
+          status = "PAYMENT_DETECTED";
+        } else {
+          const { data: latest, error: latestError } = await db.from("payments").select("status").eq("id", p.id).maybeSingle();
+          if (latestError) throw new Error(`Could not reload payment ${p.id} after detection conflict: ${latestError.message}`);
+          status = latest?.status ?? "";
+        }
+      }
+      if (status === "PAYMENT_DETECTED") {
+        if (await transition(db, p.id, "PAYMENT_DETECTED", "CONFIRMING")) {
+          status = "CONFIRMING";
+        } else {
+          const { data: latest, error: latestError } = await db.from("payments").select("status").eq("id", p.id).maybeSingle();
+          if (latestError) throw new Error(`Could not reload payment ${p.id} after confirmation conflict: ${latestError.message}`);
+          status = latest?.status ?? "";
+        }
+      }
       if (status !== "CONFIRMING") continue;
       const confirmedAmount = fromBase(confirmedUnits, dec);
       const confirmations = minConfirmations === Number.MAX_SAFE_INTEGER ? 0 : minConfirmations;
@@ -223,9 +244,11 @@ export async function runDetection(onlyPaymentId?: string): Promise<Result> {
 /** Called while a customer has the checkout page open, so payments confirm quickly without waiting for the scheduled run. */
 export async function scanPayment(paymentId: string) {
   const db = adminClient();
-  const { data: p } = await db.from("payments").select("id,status,last_scanned_at").eq("id", paymentId).maybeSingle();
-  if (!p || !OPEN.includes(p.status)) return;
-  if (p.last_scanned_at && Date.now() - new Date(p.last_scanned_at).getTime() < THROTTLE_MS) return;
-  await db.from("payments").update({ last_scanned_at: new Date().toISOString() }).eq("id", paymentId);
-  await runDetection(paymentId);
+  const { data: p, error } = await db.from("payments").select("id,status,last_scanned_at").eq("id", paymentId).maybeSingle();
+  if (error) throw new Error(`Could not load payment before scanning: ${error.message}`);
+  if (!p || !OPEN.includes(p.status)) return { errors: [] as string[] };
+  if (p.last_scanned_at && Date.now() - new Date(p.last_scanned_at).getTime() < THROTTLE_MS) return { errors: [] as string[] };
+  const { error: updateError } = await db.from("payments").update({ last_scanned_at: new Date().toISOString() }).eq("id", paymentId);
+  if (updateError) throw new Error(`Could not update payment scan time: ${updateError.message}`);
+  return runDetection(paymentId);
 }

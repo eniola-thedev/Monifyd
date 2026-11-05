@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { startPayment, getStatus, cancelPayment, type Started } from "./actions";
+import { startPayment, getStatus, type Started } from "./actions";
 import { fromBase, toBase } from "@/lib/payments/units";
 import { money } from "@/lib/format";
 
@@ -28,9 +28,14 @@ export default function Checkout({ reference, options, amountCents, feeCents, cu
   useEffect(() => {
     if (!pay || ["PAID", "EXPIRED", "FAILED", "UNDERPAID", "OVERPAID", "CANCELLED"].includes(status)) return;
     const t = setInterval(async () => {
-      const r = await getStatus(pay.paymentId);
-      if (r.status) setStatus(r.status);
-      if (r.receivedAmount !== undefined) setReceivedAmount(r.receivedAmount);
+      try {
+        const r = await getStatus(pay.paymentId);
+        if (r.status) setStatus(r.status);
+        if (r.receivedAmount !== undefined) setReceivedAmount(r.receivedAmount);
+        setError(r.error ?? "");
+      } catch {
+        setError("We couldn't check the blockchain right now. We'll keep retrying.");
+      }
     }, 5000);
     return () => clearInterval(t);
   }, [pay, status]);
@@ -42,19 +47,6 @@ export default function Checkout({ reference, options, amountCents, feeCents, cu
     const timer = setInterval(update, 1000);
     return () => clearInterval(timer);
   }, [pay]);
-
-  const cancel = () => {
-    setError("");
-    run(async () => {
-      try {
-        const result = await cancelPayment(pay!.paymentId);
-        if (result.status) setStatus(result.status);
-        if (result.error) setError(result.error);
-      } catch {
-        setError("We couldn't cancel this payment right now. Please try again.");
-      }
-    });
-  };
 
   const copy = async (text: string, key: string) => { await navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(""), 1500); };
 
@@ -97,7 +89,8 @@ export default function Checkout({ reference, options, amountCents, feeCents, cu
         <div className="qr" role="img" aria-label="QR code for the payment address" dangerouslySetInnerHTML={{ __html: pay.qrSvg }} />
         <p className="hint" style={{ textAlign: "center", fontSize: ".85rem", color: "var(--muted)" }}>Send the exact amount shown. Price locked for <strong>{timerLabel}</strong> more.</p>
       </>)}
-      {status === "AWAITING_PAYMENT" && <button type="button" className="btn" style={{ width: "100%", marginTop: 12 }} disabled={busy} onClick={cancel}>{busy ? "Cancelling…" : "Cancel payment"}</button>}
+      {!terminal && <button type="button" className="btn" style={{ width: "100%", marginTop: 12 }} onClick={() => { setPay(null); setError(""); }}>Leave checkout</button>}
+      {!terminal && <p className="hint" style={{ textAlign: "center", marginTop: 8 }}>Your quote stays active. Reopen this invoice link and choose the same payment option to continue.</p>}
       {status === "CANCELLED" && <p className="flash" role="status">Payment cancelled.</p>}
       {status === "EXPIRED" && <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => { setPay(null); setStatus("AWAITING_PAYMENT"); }}>Get a new quote</button>}
       {done && returnUrl && <a className="btn btn-primary" style={{ width: "100%" }} href={returnUrl}>Return to merchant</a>}

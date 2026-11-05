@@ -4,6 +4,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Flash } from "@/components/Flash";
 import { money, shortDate } from "@/lib/format";
 import { assignTransfer, ignoreTransfer } from "./actions";
+import { StatusRefresh } from "../StatusRefresh";
 
 export const metadata = { title: "Payments | Monifyd" };
 const STATUSES = ["AWAITING_PAYMENT", "PAYMENT_DETECTED", "CONFIRMING", "PAID", "UNDERPAID", "OVERPAID", "EXPIRED", "FAILED"];
@@ -25,6 +26,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
   ]);
   if (error) throw new Error(`Could not load payments: ${error.message}`);
   const pageCount = Math.max(1, Math.ceil((count ?? 0) / pageSize));
+  const hasPendingPayments = (data ?? []).some((payment: any) => ["AWAITING_PAYMENT", "PAYMENT_DETECTED", "CONFIRMING"].includes(payment.status));
   const pageHref = (target: number) => {
     const params = new URLSearchParams();
     if (sp.status && STATUSES.includes(sp.status)) params.set("status", sp.status);
@@ -34,6 +36,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
   };
   return (
     <>
+      {hasPendingPayments && <StatusRefresh />}
       <div className="head"><h1>Payments</h1>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <a className="btn btn-sm" href="/dashboard/exports/payments">Export CSV</a>

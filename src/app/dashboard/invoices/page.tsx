@@ -9,6 +9,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { InvoiceComposer } from "./InvoiceComposer";
 import { SendInvoiceButton } from "./SendInvoiceButton";
 import { createInvoice, cancelInvoice } from "./actions";
+import { StatusRefresh } from "../StatusRefresh";
 
 export const metadata = { title: "Invoices | Monifyd" };
 
@@ -39,6 +40,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
   ]);
   if (error) throw new Error(`Could not load invoices: ${error.message}`);
   const pageCount = Math.max(1, Math.ceil((count ?? 0) / pageSize));
+  const hasPendingInvoices = (invoices ?? []).some((invoice: any) => ["AWAITING_PAYMENT", "PAYMENT_DETECTED", "CONFIRMING"].includes(invoice.status));
   const pageHref = (target: number) => {
     const params = new URLSearchParams();
     if (sp.status && statuses.includes(sp.status)) params.set("status", sp.status);
@@ -49,6 +51,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
   const have = new Set((wallets ?? []).map((w: any) => w.network as string));
   return (
     <div className="invoices-page">
+      {hasPendingInvoices && <StatusRefresh />}
       <header className="invoices-heading">
         <div><h1>Invoices</h1><p>Send payment requests and keep track of what customers owe.</p></div>
         <a className="btn" href="/dashboard/exports/invoices">Export CSV</a>

@@ -76,38 +76,23 @@ export async function startPayment(reference: string, asset: string, network: st
 /** Polled by the checkout page. Each poll also checks the chain for this payment (throttled). */
 export async function getStatus(paymentId: string): Promise<{ status?: string; confirmations?: number; receivedAmount?: string; error?: string }> {
   const db = adminClient();
-  try { await scanPayment(paymentId); } catch { /* the scheduled run will retry */ }
-  const { data: pay } = await db.from("payments").select("status,expires_at,confirmations,received_amount").eq("id", paymentId).maybeSingle();
+  let scanError: string | undefined;
+  try {
+    const scan = await scanPayment(paymentId);
+    if (scan.errors.length) throw new Error(scan.errors.join("; "));
+  } catch (error) {
+    console.error("Could not scan checkout payment.", { paymentId, error });
+    scanError = "We couldn't check the blockchain right now. We'll keep retrying.";
+  }
+  const { data: pay, error } = await db.from("payments").select("status,expires_at,confirmations,received_amount").eq("id", paymentId).maybeSingle();
+  if (error) {
+    console.error("Could not load checkout payment status.", { paymentId, error });
+    return { error: "We couldn't check the payment status right now. We'll keep retrying." };
+  }
   if (!pay) return { error: "Payment not found." };
   if (pay.status === "AWAITING_PAYMENT" && new Date(pay.expires_at) < new Date()) {
     await transition(db, paymentId, "AWAITING_PAYMENT", "EXPIRED");
-    return { status: "EXPIRED", receivedAmount: String(pay.received_amount ?? "0") };
+    return { status: "EXPIRED", receivedAmount: String(pay.received_amount ?? "0"), error: scanError };
   }
-  return { status: pay.status, confirmations: pay.confirmations, receivedAmount: String(pay.received_amount ?? "0") };
-}
-
-/** Lets a customer cancel a checkout before any payment is detected. */
-export async function cancelPayment(paymentId: string): Promise<{ status?: string; error?: string }> {
-  try {
-    const db = adminClient();
-    const { data: pay, error } = await db.from("payments").select("status,expires_at").eq("id", paymentId).maybeSingle();
-    if (error) throw new Error(`Could not load payment before cancellation: ${error.message}`);
-    if (!pay) return { error: "Payment not found." };
-    if (pay.status !== "AWAITING_PAYMENT") return { status: pay.status, error: "This payment can no longer be cancelled." };
-    if (new Date(pay.expires_at) <= new Date()) {
-      await transition(db, paymentId, "AWAITING_PAYMENT", "EXPIRED");
-      return { status: "EXPIRED" };
-    }
-    const cancelled = await transition(db, paymentId, "AWAITING_PAYMENT", "CANCELLED");
-    if (!cancelled) {
-      const { data: latest, error: latestError } = await db.from("payments").select("status").eq("id", paymentId).maybeSingle();
-      if (latestError) throw new Error(`Could not reload payment after cancellation conflict: ${latestError.message}`);
-      if (latest?.status === "CANCELLED") return { status: "CANCELLED" };
-      return { status: latest?.status, error: "This payment can no longer be cancelled." };
-    }
-    return { status: "CANCELLED" };
-  } catch (error) {
-    console.error("Could not cancel checkout payment.", { paymentId, error });
-    return { error: "We couldn't cancel this payment right now. Please try again." };
-  }
+  return { status: pay.status, confirmations: pay.confirmations, receivedAmount: String(pay.received_amount ?? "0"), error: scanError };
 }

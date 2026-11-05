@@ -6,6 +6,7 @@ import { Flash } from "@/components/Flash";
 import { money, shortDate } from "@/lib/format";
 import { fromBase, toBase } from "@/lib/payments/amounts";
 import { acceptUnderpayment, closeUnderpayment, createRefund, updateRefund } from "../actions";
+import { StatusRefresh } from "../../StatusRefresh";
 
 export const metadata = { title: "Payment | Monifyd" };
 
@@ -48,6 +49,7 @@ export default async function PaymentDetail({ params, searchParams }: { params: 
   const canRefund = ["PAID", "OVERPAID", "UNDERPAID", "EXPIRED"].includes(p.status) && received > 0n;
   return (
     <>
+      {["AWAITING_PAYMENT", "PAYMENT_DETECTED", "CONFIRMING"].includes(p.status) && <StatusRefresh />}
       <div className="head"><h1>Payment</h1><Link className="btn btn-sm" href="/dashboard/payments">All payments</Link></div>
       <Flash error={sp.error} message={sp.message} />
 
