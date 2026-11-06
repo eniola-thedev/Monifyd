@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const columns = [
   { title: "Product", links: [["Payment Links", "/#features"], ["API", "/developers"], ["Pricing", "/pricing"], ["Supported Networks", "/supported-networks"]] },
   { title: "Developers", links: [["Documentation", "/docs"], ["API Reference", "/api-reference"], ["Webhooks", "/webhooks"], ["API Status", "/status"]] },
-  { title: "Company", links: [["About", "/about"], ["Contact", "/contact"], ["X / Twitter", "https://x.com/monifyd"]] },
+  { title: "Company", links: [["About", "/about"], ["Blog", "/blog"], ["Contact", "/contact"], ["X / Twitter", "https://x.com/monifyd"]] },
   { title: "Legal & Security", links: [["Privacy Policy", "/privacy"], ["Cookie policy", "/cookie-policy"], ["Terms of Service", "/terms"], ["Security", "/security"], ["Acceptable Use", "/acceptable-use"], ["Fees & Refunds", "/fees-refunds"]] },
 ] as const;
 
