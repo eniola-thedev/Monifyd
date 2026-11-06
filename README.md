@@ -5,7 +5,7 @@ Monifyd currently adds no transaction fee to customer payments. Customers pay th
 
 ## Set up
 
-1. Create a Supabase project and run every migration in `supabase/migrations/` in numeric order, currently through `0021_login_security_limits.sql`. Before deploying this version or applying `0015_bachs_only.sql`, cancel any active subscriptions created with the previous provider in its dashboard.
+1. Create a Supabase project and run every migration in `supabase/migrations/` in numeric order, currently through `0022_repair_payment_transition_rpc.sql`. Before deploying this version or applying `0015_bachs_only.sql`, cancel any active subscriptions created with the previous provider in its dashboard.
 2. **Google sign-in:** in Google Cloud Console create an OAuth client (Web). Add the redirect URI shown in
    Supabase under Authentication > Providers > Google, then paste the client ID and secret there and enable it.
    In Supabase Authentication > URL Configuration, set the Site URL to `https://monifyd.com` in production and add
